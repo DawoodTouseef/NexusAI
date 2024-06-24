@@ -1,0 +1,5 @@
+PyYAML~=6.0.1
+requests~=2.32.3
+diffusers~=0.29.1
+tiktoken~=0.7.0
+Django~=5.0.6
