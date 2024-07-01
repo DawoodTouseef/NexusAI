@@ -26,12 +26,20 @@ class Chat(models.Model):
     thread = models.ForeignKey(Thread, related_name='chats', on_delete=models.CASCADE)
     sender = models.ForeignKey(User, related_name='chats', on_delete=models.CASCADE)
     message = models.TextField(blank=True, null=True)
-    response = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f'Chat by {self.sender.username} in {self.thread.title}'
+
+class Response(models.Model):
+    chat = models.ForeignKey(Chat, related_name='responses', on_delete=models.CASCADE)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'Response for chat {self.chat.id}'
 
 class Image(models.Model):
     chat = models.ForeignKey(Chat, related_name='images', on_delete=models.CASCADE)
