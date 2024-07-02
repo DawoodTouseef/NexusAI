@@ -38,10 +38,7 @@ if log_file:
 
 
 LLM = config["model"]
-
-path=os.path.join("/media/lenovo/Windows 10/models/llama2-gguf",LLM+".Q2_K.gguf")
-#model=Llama(path,n_ctx=8092,verbose=False)
-model=GenerateAPI(model="openchat_3.5")
+model_api=GenerateAPI(model="openchat_3.5")
 LLM_encoding = LLM
 if config["dev"] and LLM == "mistral-7b-instruct-v0.1":
     LLM_encoding = "mistral-7b-instruct-v0.1"
@@ -103,7 +100,7 @@ def send_request(data):
     prompt=data_dict['prompt']
     stop=data_dict['stop']
     max_tokens=data_dict['max_tokens']
-    response = model.generate(prompt=str(prompt),options={"num_predict":max_tokens,"stop":stop})
+    response = model_api.generate(prompt=str(prompt),options={"num_predict":max_tokens,"stop":stop})
     logger.debug(response)
     return response
 
@@ -258,6 +255,7 @@ def choose_model(input, task, metas):
         "temperature": 0,
         "logit_bias": {item: config["logit_bias"]["choose_model"] for item in choose_model_highlight_ids}, # 5
     }
+    print(data)
     return send_request(data)
 
 
@@ -288,3 +286,15 @@ def collect_result(command, choose, inference_result):
     result["choose model result"] = choose
     logger.debug(f"inference result: {inference_result}")
     return result
+
+def models(task,id,query:str):
+    if task in ["text-classification", "token-classification", "text2text-generation", "summarization", "translation",
+                "conversational", "text-generation"]:
+        model=GenerateAPI(model="phi3")
+        responses=model.generate(prompt=query,options={"num_predict":4096})
+
+    if task == "question-answering":
+        model=GenerateAPI(model="llama3")
+        responses=model.generate(prompt=query,options={"num_predict":8092})
+
+    return responses
