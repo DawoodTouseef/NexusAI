@@ -24,7 +24,6 @@ class Thread(models.Model):
 
 class Chat(models.Model):
     thread = models.ForeignKey(Thread, related_name='chats', on_delete=models.CASCADE)
-    sender = models.ForeignKey(User, related_name='chats', on_delete=models.CASCADE)
     message = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
