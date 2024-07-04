@@ -105,7 +105,7 @@ def send_request(data):
     max_tokens=data_dict['max_tokens']
     client = InferenceClient(
         "meta-llama/Meta-Llama-3-8B-Instruct",
-        token=os.getenv("HF_TOKEN"),
+        token=os.getenv("LLAMA_TOKEN"),
     )
     response = ""
     for message in client.chat_completion(
