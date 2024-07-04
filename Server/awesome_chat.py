@@ -408,11 +408,6 @@ def run_task(input, command, results):
         return True
 
 
-
-
-
-
-
 def extract_json_from_string(input_str):
     # Regular expression to find JSON object in the string
     json_pattern = re.compile(r'(\{.*?\})')
@@ -508,17 +503,3 @@ def chat_huggingface(messages, return_planning = False, return_results = False):
                    "op": "response"})
     logger.info(f"response: {response}")
     return answer
-
-inputs = [
-        "Given a collection of image A: /examples/a.jpg, B: /examples/b.jpg, C: /examples/c.jpg, please tell me how many zebras in these picture?"
-        "Can you give me a picture of a small bird flying in the sky with trees and clouds. Generate a high definition image if possible.",
-        "Please answer all the named entities in the sentence: Iron Man is a superhero appearing in American comic books published by Marvel Comics. The character was co-created by writer and editor Stan Lee, developed by scripter Larry Lieber, and designed by artists Don Heck and Jack Kirby.",
-        "please dub for me: 'Iron Man is a superhero appearing in American comic books published by Marvel Comics. The character was co-created by writer and editor Stan Lee, developed by scripter Larry Lieber, and designed by artists Don Heck and Jack Kirby.'"
-        "Given an image: https://huggingface.co/datasets/mishig/sample_images/resolve/main/palace.jpg, please answer the question: What is on top of the building?",
-        "Please generate a canny image based on /examples/f.jpg"
-    ]
-
-for input in inputs:
-        messages = [{"role": "user", "content": input}]
-        t=chat_huggingface(messages, return_planning=False, return_results=True)
-        print(t)
