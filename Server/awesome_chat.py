@@ -4,14 +4,17 @@ import logging
 from Server.get_token_ids import *
 import re
 import json
-from llama_cpp import Llama
 import io
 import traceback
 import copy
 from diffusers.utils import load_image
-import requests
+from huggingface_hub import InferenceClient
 from ollama_python.endpoints.generate import GenerateAPI
+from dotenv import load_dotenv
+import time
+import threading
 
+load_dotenv()
 config_file = "configs/config.yaml"
 config = yaml.load(open(config_file, "r"), Loader=yaml.FullLoader)
 os.makedirs("logs", exist_ok=True)
@@ -100,7 +103,18 @@ def send_request(data):
     prompt=data_dict['prompt']
     stop=data_dict['stop']
     max_tokens=data_dict['max_tokens']
-    response = model_api.generate(prompt=str(prompt),options={"num_predict":max_tokens,"stop":stop})
+    client = InferenceClient(
+        "meta-llama/Meta-Llama-3-8B-Instruct",
+        token=os.getenv("HF_TOKEN"),
+    )
+    response = ""
+    for message in client.chat_completion(
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=max_tokens,
+        stop=stop,
+            stream=True,
+    ):
+        response += message.choices[0].delta.content
     logger.debug(response)
     return response
 
@@ -298,3 +312,87 @@ def models(task,id,query:str):
         responses=model.generate(prompt=query,options={"num_predict":8092})
 
     return responses
+
+def run_task(*args,**kwargs):
+    pass
+def extract_json_from_string(input_str):
+    # Regular expression to find JSON object in the string
+    json_pattern = re.compile(r'(\{.*?\})')
+
+    # Search for the JSON object
+    match = json_pattern.search(input_str)
+
+    if match:
+        json_str = match.group(1)
+        try:
+            # Try to parse the JSON object
+            json_obj = json.loads(json_str)
+            return json_obj
+        except Exception as e:
+            logger.debug(e)
+            # If JSON is invalid, return empty JSON
+            return {}
+    else:
+        # If no JSON object is found, return empty JSON
+        return {}
+
+def chat_huggingface(messages, return_planning = False, return_results = False):
+    start = time.time()
+    context = messages[:-1]
+    input = messages[-1]["content"]
+    logger.info("*" * 80)
+    logger.info(f"input: {input}")
+
+    task_str = parse_task(context, input)
+    tasks=extract_json_from_string(task_str)
+
+    if task_str == "[]":  # using LLM response for empty task
+        record_case(success=False, **{"input": input, "task": [], "reason": "task parsing fail: empty", "op": "chitchat"})
+        response = chitchat(messages)
+        return {"message": response}
+
+    if len(tasks) == 1 and tasks[0]["task"] in ["summarization", "translation", "conversational", "text-generation", "text2text-generation"]:
+        record_case(success=True, **{"input": input, "task": tasks, "reason": "chitchat tasks", "op": "chitchat"})
+        response = chitchat(messages)
+        return {"message": response}
+
+    tasks = unfold(tasks)
+    tasks = fix_dep(tasks)
+    logger.debug(tasks)
+
+    if return_planning:
+        return tasks
+
+    results = {}
+    threads = []
+    tasks = tasks[:]
+    d = dict()
+    retry = 0
+    while True:
+        num_thread = len(threads)
+        for task in tasks:
+            # logger.debug(f"d.keys(): {d.keys()}, dep: {dep}")
+            for dep_id in task["dep"]:
+                if dep_id >= task["id"]:
+                    task["dep"] = [-1]
+                    break
+            dep = task["dep"]
+            if dep[0] == -1 or len(list(set(dep).intersection(d.keys()))) == len(dep):
+                tasks.remove(task)
+                thread = threading.Thread(target=run_task, args=(input, task, d))
+                thread.start()
+                threads.append(thread)
+        if num_thread == len(threads):
+            time.sleep(0.5)
+            retry += 1
+        if retry > 160:
+            logger.debug("User has waited too long, Loop break.")
+            break
+        if len(tasks) == 0:
+            break
+    for thread in threads:
+        thread.join()
+
+    results = d.copy()
+
+    logger.debug(results)
