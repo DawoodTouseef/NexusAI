@@ -269,7 +269,6 @@ def choose_model(input, task, metas):
         "temperature": 0,
         "logit_bias": {item: config["logit_bias"]["choose_model"] for item in choose_model_highlight_ids}, # 5
     }
-    print(data)
     return send_request(data)
 
 
@@ -300,18 +299,6 @@ def collect_result(command, choose, inference_result):
     result["choose model result"] = choose
     logger.debug(f"inference result: {inference_result}")
     return result
-
-def models(task,id,query:str):
-    if task in ["text-classification", "token-classification", "text2text-generation", "summarization", "translation",
-                "conversational", "text-generation"]:
-        model=GenerateAPI(model="phi3")
-        responses=model.generate(prompt=query,options={"num_predict":4096})
-
-    if task == "question-answering":
-        model=GenerateAPI(model="llama3")
-        responses=model.generate(prompt=query,options={"num_predict":8092})
-
-    return responses
 
 def run_task(input, command, results):
     id = command["id"]
@@ -374,8 +361,7 @@ def run_task(input, command, results):
             args["text"] = text
 
     for resource in ["image", "audio"]:
-        if resource in args and not args[resource].startswith("public/") and len(args[resource]) > 0 and not args[
-            resource].startswith("http"):
+        if resource in args and not args[resource].startswith("public/") and len(args[resource]) > 0 and not args[resource].startswith("http"):
             args[resource] = f"public/{args[resource]}"
 
     if "-text-to-image" in command['task'] and "text" not in args:
@@ -397,7 +383,7 @@ def run_task(input, command, results):
     if task in ["summarization", "translation", "conversational", "text-generation",
                 "text2text-generation"]:  # ChatGPT Can do
         best_model_id = "LLAMA3-8B"
-        reason = "ChatGPT performs well on some NLP tasks as well."
+        reason = "LLAMA3-8B performs well on some NLP tasks as well."
         choose = {"id": best_model_id, "reason": reason}
         messages = [{
             "role": "user",
@@ -411,7 +397,7 @@ def run_task(input, command, results):
 def extract_lists(input_str):
     # Regular expression to find JSON-like lists within the string
     # This regex looks for lists in the format: [{"key1": "value1", "key2": "value2"}, {...}]
-    list_pattern = r'\[(\{.*?\})+\]'
+    list_pattern = r'\[\s*{.*?}\s*\]'
 
     # Find all matches of the pattern
     matches = re.findall(list_pattern, input_str, re.DOTALL)
@@ -419,10 +405,12 @@ def extract_lists(input_str):
     # If matches are found, process them into lists
     result = []
     for match in matches:
-        # Remove newlines and extra spaces
-        clean_match = match.replace('\n', '').replace(' ', '')
-        # Add the cleaned match to result list
-        result.append(clean_match)
+        # Attempt to parse the match as JSON
+        try:
+            json_obj = json.loads(match)
+            result.append(json_obj)
+        except json.JSONDecodeError:
+            continue
 
     return result
 
@@ -434,14 +422,15 @@ def chat_huggingface(messages, return_planning = False, return_results = False):
     logger.info(f"input: {input}")
 
     task_str = parse_task(context, input)
-    tasks=extract_lists(task_str)
-
-    if task_str == {}:  # using LLM response for empty task
-        record_case(success=False, **{"input": input, "task": [], "reason": "task parsing fail: empty", "op": "chitchat"})
+    tasks=extract_lists(task_str)[0]
+    if tasks == []:  # using LLM response for empty task
+        record_case(success=False,
+                    **{"input": input, "task": [], "reason": "task parsing fail: empty", "op": "chitchat"})
         response = chitchat(messages)
         return {"message": response}
 
-    if len(tasks) == 1 and tasks[0]["task"] in ["summarization", "translation", "conversational", "text-generation", "text2text-generation"]:
+    if len(tasks) == 1 and tasks[0]["task"] in ["summarization", "translation", "conversational", "text-generation",
+                                                "text2text-generation"]:
         record_case(success=True, **{"input": input, "task": tasks, "reason": "chitchat tasks", "op": "chitchat"})
         response = chitchat(messages)
         return {"message": response}
@@ -480,23 +469,22 @@ def chat_huggingface(messages, return_planning = False, return_results = False):
             break
         if len(tasks) == 0:
             break
-    for thread in threads:
-        thread.join()
+        for thread in threads:
+            thread.join()
 
-    results = d.copy()
+        results = d.copy()
+        logger.debug(results)
+        if return_results:
+            return results
 
-    logger.debug(results)
-    if return_results:
-        return results
+        response = response_results(input, results).strip()
 
-    response = response_results(input, results).strip()
+        end = time.time()
+        during = end - start
 
-    end = time.time()
-    during = end - start
-
-    answer = {"message": response}
-    record_case(success=True,
-                **{"input": input, "task": task_str, "results": results, "response": response, "during": during,
-                   "op": "response"})
-    logger.info(f"response: {response}")
-    return answer
+        answer = {"message": response}
+        record_case(success=True,
+                    **{"input": input, "task": task_str, "results": results, "response": response, "during": during,
+                       "op": "response"})
+        logger.info(f"response: {response}")
+        return answer
