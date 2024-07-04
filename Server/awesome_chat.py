@@ -1,18 +1,28 @@
-import yaml
-import os
-import logging
-from Server.get_token_ids import *
-import re
-import json
-import io
-import traceback
-import copy
-from diffusers.utils import load_image
 from huggingface_hub import InferenceClient
 from ollama_python.endpoints.generate import GenerateAPI
 from dotenv import load_dotenv
+import base64
+import copy
+from io import BytesIO
+import io
+import os
+import random
 import time
+import traceback
+import uuid
+import requests
+import re
+import json
+import logging
+import yaml
+from PIL import Image, ImageDraw
+from diffusers.utils import load_image
+from pydub import AudioSegment
 import threading
+from get_token_ids import get_token_ids_for_task_parsing, get_token_ids_for_choose_model, count_tokens, get_max_context_length
+from huggingface_hub import InferenceApi
+from queue import Queue
+
 
 load_dotenv()
 config_file = "configs/config.yaml"
@@ -41,10 +51,24 @@ if log_file:
 
 
 LLM = config["model"]
+inference_mode=config['inference_mode']
 model_api=GenerateAPI(model="openchat_3.5")
 LLM_encoding = LLM
 if config["dev"] and LLM == "mistral-7b-instruct-v0.1":
     LLM_encoding = "mistral-7b-instruct-v0.1"
+
+# check the local_inference_endpoint
+Model_Server = None
+if inference_mode!="huggingface":
+    Model_Server = "http://" + config["local_inference_endpoint"]["host"] + ":" + str(config["local_inference_endpoint"]["port"])
+    message = f"The server of local inference endpoints is not running, please start it first. (or using `inference_mode: huggingface` in {config} for a feature-limited experience)"
+    try:
+        r = requests.get(Model_Server + "/running")
+        if r.status_code != 200:
+            raise ValueError(message)
+    except:
+        raise ValueError(message)
+
 task_parsing_highlight_ids = get_token_ids_for_task_parsing(LLM_encoding)
 choose_model_highlight_ids = get_token_ids_for_choose_model(LLM_encoding)
 
@@ -55,10 +79,27 @@ for model in MODELS:
     if tag not in MODELS_MAP:
         MODELS_MAP[tag] = []
     MODELS_MAP[tag].append(model)
-
 METADATAS = {}
 for model in MODELS:
     METADATAS[model["id"]] = model
+
+PROXY = None
+if config["proxy"]:
+    PROXY = {
+        "https": config["proxy"],
+    }
+
+HUGGINGFACE_HEADERS = {}
+if config["huggingface"]["token"] and config["huggingface"]["token"].startswith("hf_"):  # Check for valid huggingface token in config file
+    HUGGINGFACE_HEADERS = {
+        "Authorization": f"Bearer {config['huggingface']['token']}",
+    }
+elif "LLAMA_TOKEN" in os.environ and os.getenv("LLAMA_TOKEN").startswith("hf_"):  # Check for environment variable HUGGINGFACE_ACCESS_TOKEN
+    HUGGINGFACE_HEADERS = {
+        "Authorization": f"Bearer {os.getenv('LLAMA_TOKEN')}",
+    }
+else:
+    raise ValueError(f"Incorrect HuggingFace token. Please check your {config} file.")
 
 parse_task_demos_or_presteps = open(config["demos_or_presteps"]["parse_task"], "r").read()
 choose_model_demos_or_presteps = open(config["demos_or_presteps"]["choose_model"], "r").read()
@@ -202,7 +243,7 @@ def unfold(tasks):
                             tasks.append(new_task)
                         tasks.remove(task)
     except Exception as e:
-        print(e)
+        #print(e)
         traceback.print_exc()
         logger.debug("unfold task failed.")
 
@@ -293,12 +334,209 @@ def response_results(input,results:dict):
     return send_request(data)
 
 
-def collect_result(command, choose, inference_result):
+def collect_result(command, inference_result,choose=None):
     result = {"task": command}
     result["inference result"] = inference_result
-    result["choose model result"] = choose
+    if choose:
+        result["choose model result"] = choose
     logger.debug(f"inference result: {inference_result}")
     return result
+
+
+def huggingface_model_inference(model_id, data, task):
+    task_url = f"https://api-inference.huggingface.co/models/{model_id}"
+    inference = InferenceApi(repo_id=model_id, token=os.getenv("LLAMA_TOKEN"))
+    # NLP tasks
+    #if task == "question-answering":
+    #    task_url = f"https://api-inference.huggingface.co/models/{model_id}"  # InferenceApi does not yet support some tasks
+    #    inference = InferenceApi(repo_id=model_id, token=os.getenv("LLAMA_TOKEN"))
+    #    inputs = {"question": data["text"], "context": (data["context"] if "context" in data else "")}
+    #    result = inference(inputs)
+    if task == "sentence-similarity":
+        inputs = {"source_sentence": data["text1"], "target_sentence": data["text2"]}
+        model_id='sentence-transformers/all-MiniLM-L6-v2'
+        task_url = f"https://api-inference.huggingface.co/models/{model_id}"  # InferenceApi does not yet support some tasks
+        inference = InferenceApi(repo_id=model_id, token=os.getenv("LLAMA_TOKEN"))
+        result = inference(inputs)
+    if task in ["text-classification", "token-classification", "text2text-generation", "summarization", #"translation",
+                "conversational", "text-generation"]:
+        inputs = data["text"]
+        model=GenerateAPI(model="llama3")
+        result = {"generated text":model.generate(inputs,options={"num_predicts":4096}).response}
+
+    # CV tasks
+    if task == "visual-question-answering" or task == "document-question-answering":
+        img_url = data["image"]
+        text = data["text"]
+        img_data = image_to_bytes(img_url)
+        img_base64 = base64.b64encode(img_data)
+        name = str(uuid.uuid4())[:4]
+        # Write the bytes to a file
+        with open(f"public/images/{name}.png", 'wb') as output_file:
+            output_file.write(img_data)
+
+        json_data = {}
+        json_data["inputs"] = {}
+        json_data["inputs"]["question"] = text
+        json_data["inputs"]["image"] = img_base64.decode("utf-8")
+        model=GenerateAPI("llava")
+        result = {"generated text":model.generate(prompt=text,images=[f"public/images/{name}.png"])}
+        # result = inference(inputs) # not support
+
+    if task == "image-to-image":
+         # InferenceApi does not yet support some tasks
+        img_url = data["image"]
+        img_data = image_to_bytes(img_url)
+        # result = inference(data=img_data) # not support
+        HUGGINGFACE_HEADERS["Content-Length"] = str(len(img_data))
+        r = requests.post(task_url, headers=HUGGINGFACE_HEADERS, data=img_data)
+        result = r.json()
+        if "path" in result:
+            result["generated image"] = result.pop("path")
+
+    if task == "text-to-image":
+        inputs = data["text"]
+        img = inference(inputs)
+        name = str(uuid.uuid4())[:4]
+        img.save(f"public/images/{name}.png")
+        result = {}
+        result["generated image"] = f"/images/{name}.png"
+
+    if task == "image-segmentation":
+        img_url = data["image"]
+        img_data = image_to_bytes(img_url)
+        image = Image.open(BytesIO(img_data))
+        predicted = inference(data=img_data)
+        colors = []
+        for i in range(len(predicted)):
+            colors.append((random.randint(100, 255), random.randint(100, 255), random.randint(100, 255), 155))
+        for i, pred in enumerate(predicted):
+            label = pred["label"]
+            mask = pred.pop("mask").encode("utf-8")
+            mask = base64.b64decode(mask)
+            mask = Image.open(BytesIO(mask), mode='r')
+            mask = mask.convert('L')
+
+            layer = Image.new('RGBA', mask.size, colors[i])
+            image.paste(layer, (0, 0), mask)
+        name = str(uuid.uuid4())[:4]
+        image.save(f"public/images/{name}.jpg")
+        result = {}
+        result["generated image"] = f"/images/{name}.jpg"
+        result["predicted"] = predicted
+
+    if task == "object-detection":
+        img_url = data["image"]
+        img_data = image_to_bytes(img_url)
+        predicted = inference(data=img_data)
+        image = Image.open(BytesIO(img_data))
+        draw = ImageDraw.Draw(image)
+        labels = list(item['label'] for item in predicted)
+        color_map = {}
+        for label in labels:
+            if label not in color_map:
+                color_map[label] = (random.randint(0, 255), random.randint(0, 100), random.randint(0, 255))
+        for label in predicted:
+            box = label["box"]
+            draw.rectangle(((box["xmin"], box["ymin"]), (box["xmax"], box["ymax"])), outline=color_map[label["label"]],
+                           width=2)
+            draw.text((box["xmin"] + 5, box["ymin"] - 15), label["label"], fill=color_map[label["label"]])
+        name = str(uuid.uuid4())[:4]
+        image.save(f"public/images/{name}.jpg")
+        result = {}
+        result["generated image"] = f"/images/{name}.jpg"
+        result["predicted"] = predicted
+
+    if task in ["image-classification"]:
+        img_url = data["image"]
+        img_data = image_to_bytes(img_url)
+        result = inference(data=img_data)
+
+    if task == "image-to-text":
+        img_url = data["image"]
+        img_data = image_to_bytes(img_url)
+        HUGGINGFACE_HEADERS["Content-Length"] = str(len(img_data))
+        r = requests.post(task_url, headers=HUGGINGFACE_HEADERS, data=img_data, proxies=PROXY)
+        result = {}
+        if "generated_text" in r.json()[0]:
+            result["generated text"] = r.json()[0].pop("generated_text")
+
+    # AUDIO tasks
+    if task == "text-to-speech":
+        inference = InferenceApi(repo_id=model_id, token=os.getenv("LLAMA_TOKEN"))
+        inputs = data["text"]
+        response = inference(inputs, raw_response=True)
+        # response = requests.post(task_url, headers=HUGGINGFACE_HEADERS, json={"inputs": text})
+        name = str(uuid.uuid4())[:4]
+        with open(f"public/audios/{name}.flac", "wb") as f:
+            f.write(response.content)
+        result = {"generated audio": f"/audios/{name}.flac"}
+    if task in ["automatic-speech-recognition", "audio-to-audio", "audio-classification"]:
+        inference = InferenceApi(repo_id=model_id, token=os.getenv("LLAMA_TOKEN"))
+        audio_url = data["audio"]
+        audio_data = requests.get(audio_url, timeout=10).content
+        response = inference(data=audio_data, raw_response=True)
+        result = response.json()
+        if task == "audio-to-audio":
+            content = None
+            type = None
+            for k, v in result[0].items():
+                if k == "blob":
+                    content = base64.b64decode(v.encode("utf-8"))
+                if k == "content-type":
+                    type = "audio/flac".split("/")[-1]
+            audio = AudioSegment.from_file(BytesIO(content))
+            name = str(uuid.uuid4())[:4]
+            audio.export(f"public/audios/{name}.{type}", format=type)
+            result = {"generated audio": f"/audios/{name}.{type}"}
+    return result
+
+def get_model_status(model_id, url, headers, queue = None):
+    endpoint_type = "huggingface"
+    r = requests.get(url, headers=headers, proxies=PROXY)
+    if r.status_code == 200:
+        if queue:
+            queue.put((model_id, True, endpoint_type))
+        return True
+    else:
+        if queue:
+            queue.put((model_id, False, endpoint_type))
+        return False
+
+def get_avaliable_models(candidates, topk=5):
+    all_available_models = {"local": [], "huggingface": []}
+    threads = []
+    result_queue = Queue()
+
+    for candidate in candidates:
+        model_id = candidate["id"]
+
+        if inference_mode != "local":
+            huggingfaceStatusUrl = f"https://api-inference.huggingface.co/status/{model_id}"
+            thread = threading.Thread(target=get_model_status,
+                                      args=(model_id, huggingfaceStatusUrl, HUGGINGFACE_HEADERS, result_queue))
+            threads.append(thread)
+            thread.start()
+
+        if inference_mode != "huggingface" and config["local_deployment"] != "minimal":
+            localStatusUrl = f"{Model_Server}/status/{model_id}"
+            thread = threading.Thread(target=get_model_status, args=(model_id, localStatusUrl, {}, result_queue))
+            threads.append(thread)
+            thread.start()
+
+    result_count = len(threads)
+    while result_count:
+        model_id, status, endpoint_type = result_queue.get()
+        if status and model_id not in all_available_models:
+            all_available_models[endpoint_type].append(model_id)
+        if len(all_available_models["local"] + all_available_models["huggingface"]) >= topk:
+            break
+        result_count -= 1
+
+    for thread in threads:
+        thread.join()
+
+    return all_available_models
 
 def run_task(input, command, results):
     id = command["id"]
@@ -392,6 +630,74 @@ def run_task(input, command, results):
         response = chitchat(messages)
         results[id] = collect_result(command, choose, {"response": response})
         return True
+    else:
+        if task not in MODELS_MAP:
+            logger.warning(f"no available models on {task} task.")
+            record_case(success=False,
+                        **{"input": input, "task": command, "reason": f"task not support: {command['task']}",
+                           "op": "message"})
+            inference_result = {"error": f"{command['task']} not found in available tasks."}
+            results[id] = collect_result(command, "", inference_result)
+            return False
+
+        candidates = MODELS_MAP[task][:10]
+        all_avaliable_models = get_avaliable_models(candidates, config["num_candidate_models"])
+        all_avaliable_model_ids = all_avaliable_models["local"] + all_avaliable_models["huggingface"]
+        logger.debug(f"avaliable models on {command['task']}: {all_avaliable_models}")
+
+        if len(all_avaliable_model_ids) == 0:
+            logger.warning(f"no available models on {command['task']}")
+            record_case(success=False,
+                        **{"input": input, "task": command, "reason": f"no available models: {command['task']}",
+                           "op": "message"})
+            inference_result = {"error": f"no available models on {command['task']} task."}
+            #inference_result=model_api.generate(prompt=f"{inference_result['error']}").response
+            results[id] = collect_result(command, "", inference_result)
+            return False
+
+        if len(all_avaliable_model_ids) == 1:
+            best_model_id = all_avaliable_model_ids[0]
+            reason = "Only one model available."
+            choose = {"id": best_model_id, "reason": reason}
+            logger.debug(f"chosen model: {choose}")
+        else:
+            cand_models_info = [
+                {
+                    "id": model["id"],
+                    "inference endpoint": all_avaliable_models.get(
+                        "local" if model["id"] in all_avaliable_models["local"] else "huggingface"
+                    ),
+                    "likes": model.get("likes"),
+                    "description": model.get("description", "")[:config["max_description_length"]],
+                    # "language": model.get("meta").get("language") if model.get("meta") else None,
+                    "tags": model.get("meta").get("tags") if model.get("meta") else None,
+                }
+                for model in candidates
+                if model["id"] in all_avaliable_model_ids
+            ]
+
+            choose_str = choose_model(input, command, cand_models_info)
+            logger.debug(f"chosen model: {choose_str}")
+            try:
+                choose = json.loads(choose_str)
+                best_model_id = choose["id"]
+            except Exception as e:
+                logger.warning(
+                    f"the response [ {choose_str} ] is not a valid JSON, try to find the model id and reason in the response.")
+                choose_str = find_json(choose_str)
+                best_model_id, reason, choose = get_id_reason(choose_str)
+        inference_result = huggingface_model_inference(best_model_id, args, command['task'])
+
+        if "error" in inference_result:
+            logger.warning(f"Inference error: {inference_result['error']}")
+            record_case(success=False,
+                        **{"input": input, "task": command, "reason": f"inference error: {inference_result['error']}",
+                           "op": "message"})
+            results[id] = collect_result(command, choose, inference_result)
+            return False
+
+        results[id] = collect_result(command, choose, inference_result)
+        return True
 
 
 def extract_lists(input_str):
@@ -422,7 +728,10 @@ def chat_huggingface(messages, return_planning = False, return_results = False):
     logger.info(f"input: {input}")
 
     task_str = parse_task(context, input)
-    tasks=extract_lists(task_str)[0]
+    try:
+        tasks=extract_lists(task_str)[0]
+    except IndexError as e:
+        tasks=[]
     if tasks == []:  # using LLM response for empty task
         record_case(success=False,
                     **{"input": input, "task": [], "reason": "task parsing fail: empty", "op": "chitchat"})
@@ -488,3 +797,21 @@ def chat_huggingface(messages, return_planning = False, return_results = False):
                        "op": "response"})
         logger.info(f"response: {response}")
         return answer
+
+
+def cli():
+    messages = []
+    print("Welcome to Jarvis! A collaborative system that consists of an LLM as the controller and numerous expert models as collaborative executors. Jarvis can plan tasks, schedule Hugging Face models, generate friendly responses based on your requests, and help you with many things. Please enter your request (`exit` to exit).")
+    while True:
+        message = input("[ User ]: ")
+        if message == "exit":
+            break
+        messages.append({"role": "user", "content": message})
+        answer = chat_huggingface(messages,  return_planning=False, return_results=False)
+        print("[ Jarvis ]: ", answer["message"])
+        messages.append({"role": "assistant", "content": answer["message"]})
+
+
+if __name__=="__main__":
+    cli()
+

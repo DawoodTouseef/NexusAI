@@ -13,6 +13,10 @@ proxy:  # optional: your proxy server "http://ip:port"
 http_listen:
   host: 0.0.0.0 # if you use web as the client, please set `http://{LAN_IP_of_the_server}:{port}/` to `BASE_URL` of `web/src/config/index.ts`.
   port: 8004
+
+local_inference_endpoint:
+  host: localhost
+  port: 8005
 logit_bias:
   parse_task: 0.1
   choose_model: 5
