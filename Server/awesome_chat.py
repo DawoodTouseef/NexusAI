@@ -111,7 +111,7 @@ def send_request(data):
     for message in client.chat_completion(
             messages=[{"role": "user", "content": prompt}],
             max_tokens=max_tokens,
-        stop=stop,
+            stop=stop,
             stream=True,
     ):
         response += message.choices[0].delta.content
@@ -408,26 +408,23 @@ def run_task(input, command, results):
         return True
 
 
-def extract_json_from_string(input_str):
-    # Regular expression to find JSON object in the string
-    json_pattern = re.compile(r'(\{.*?\})')
+def extract_lists(input_str):
+    # Regular expression to find JSON-like lists within the string
+    # This regex looks for lists in the format: [{"key1": "value1", "key2": "value2"}, {...}]
+    list_pattern = r'\[(\{.*?\})+\]'
 
-    # Search for the JSON object
-    match = json_pattern.search(input_str)
+    # Find all matches of the pattern
+    matches = re.findall(list_pattern, input_str, re.DOTALL)
 
-    if match:
-        json_str = match.group(1)
-        try:
-            # Try to parse the JSON object
-            json_obj = json.loads(json_str)
-            return json_obj
-        except Exception as e:
-            logger.debug(e)
-            # If JSON is invalid, return empty JSON
-            return {}
-    else:
-        # If no JSON object is found, return empty JSON
-        return {}
+    # If matches are found, process them into lists
+    result = []
+    for match in matches:
+        # Remove newlines and extra spaces
+        clean_match = match.replace('\n', '').replace(' ', '')
+        # Add the cleaned match to result list
+        result.append(clean_match)
+
+    return result
 
 def chat_huggingface(messages, return_planning = False, return_results = False):
     start = time.time()
@@ -437,9 +434,9 @@ def chat_huggingface(messages, return_planning = False, return_results = False):
     logger.info(f"input: {input}")
 
     task_str = parse_task(context, input)
-    tasks=extract_json_from_string(task_str)
+    tasks=extract_lists(task_str)
 
-    if task_str == "[]":  # using LLM response for empty task
+    if task_str == {}:  # using LLM response for empty task
         record_case(success=False, **{"input": input, "task": [], "reason": "task parsing fail: empty", "op": "chitchat"})
         response = chitchat(messages)
         return {"message": response}
