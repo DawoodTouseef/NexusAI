@@ -313,8 +313,106 @@ def models(task,id,query:str):
 
     return responses
 
-def run_task(*args,**kwargs):
-    pass
+def run_task(input, command, results):
+    id = command["id"]
+    args = command["args"]
+    task = command["task"]
+    deps = command["dep"]
+
+    if deps[0] != -1:
+        dep_tasks = [results[dep] for dep in deps]
+    else:
+        dep_tasks = []
+
+    logger.debug(f"Run task: {id} - {task}")
+    logger.debug("Deps: " + json.dumps(dep_tasks))
+
+    if deps[0] != -1:
+        if "image" in args and "<GENERATED>-" in args["image"]:
+            resource_id = int(args["image"].split("-")[1])
+            if "generated image" in results[resource_id]["inference result"]:
+                args["image"] = results[resource_id]["inference result"]["generated image"]
+        if "audio" in args and "<GENERATED>-" in args["audio"]:
+            resource_id = int(args["audio"].split("-")[1])
+            if "generated audio" in results[resource_id]["inference result"]:
+                args["audio"] = results[resource_id]["inference result"]["generated audio"]
+        if "text" in args and "<GENERATED>-" in args["text"]:
+            resource_id = int(args["text"].split("-")[1])
+            if "generated text" in results[resource_id]["inference result"]:
+                args["text"] = results[resource_id]["inference result"]["generated text"]
+
+
+    text = image = audio = None
+    for dep_task in dep_tasks:
+        if "generated text" in dep_task["inference result"]:
+            text = dep_task["inference result"]["generated text"]
+            logger.debug("Detect the generated text of dependency task (from results):" + text)
+        elif "text" in dep_task["task"]["args"]:
+            text = dep_task["task"]["args"]["text"]
+            logger.debug("Detect the text of dependency task (from args): " + text)
+        if "generated image" in dep_task["inference result"]:
+            image = dep_task["inference result"]["generated image"]
+            logger.debug("Detect the generated image of dependency task (from results): " + image)
+        elif "image" in dep_task["task"]["args"]:
+            image = dep_task["task"]["args"]["image"]
+            logger.debug("Detect the image of dependency task (from args): " + image)
+        if "generated audio" in dep_task["inference result"]:
+            audio = dep_task["inference result"]["generated audio"]
+            logger.debug("Detect the generated audio of dependency task (from results): " + audio)
+        elif "audio" in dep_task["task"]["args"]:
+            audio = dep_task["task"]["args"]["audio"]
+            logger.debug("Detect the audio of dependency task (from args): " + audio)
+
+    if "image" in args and "<GENERATED>" in args["image"]:
+        if image:
+            args["image"] = image
+    if "audio" in args and "<GENERATED>" in args["audio"]:
+        if audio:
+            args["audio"] = audio
+    if "text" in args and "<GENERATED>" in args["text"]:
+        if text:
+            args["text"] = text
+
+    for resource in ["image", "audio"]:
+        if resource in args and not args[resource].startswith("public/") and len(args[resource]) > 0 and not args[
+            resource].startswith("http"):
+            args[resource] = f"public/{args[resource]}"
+
+    if "-text-to-image" in command['task'] and "text" not in args:
+        logger.debug("control-text-to-image task, but text is empty, so we use control-generation instead.")
+        control = task.split("-")[0]
+
+        if control == "seg":
+            task = "image-segmentation"
+            command['task'] = task
+        elif control == "depth":
+            task = "depth-estimation"
+            command['task'] = task
+        else:
+            task = f"{control}-control"
+
+    command["args"] = args
+    logger.debug(f"parsed task: {command}")
+
+    if task in ["summarization", "translation", "conversational", "text-generation",
+                "text2text-generation"]:  # ChatGPT Can do
+        best_model_id = "LLAMA3-8B"
+        reason = "ChatGPT performs well on some NLP tasks as well."
+        choose = {"id": best_model_id, "reason": reason}
+        messages = [{
+            "role": "user",
+            "content": f"[ {input} ] contains a task in JSON format {command}. Now you are a {command['task']} system, the arguments are {command['args']}. Just help me do {command['task']} and give me the result. The result must be in text form without any urls."
+        }]
+        response = chitchat(messages)
+        results[id] = collect_result(command, choose, {"response": response})
+        return True
+
+
+
+
+
+
+
 def extract_json_from_string(input_str):
     # Regular expression to find JSON object in the string
     json_pattern = re.compile(r'(\{.*?\})')
@@ -396,3 +494,31 @@ def chat_huggingface(messages, return_planning = False, return_results = False):
     results = d.copy()
 
     logger.debug(results)
+    if return_results:
+        return results
+
+    response = response_results(input, results).strip()
+
+    end = time.time()
+    during = end - start
+
+    answer = {"message": response}
+    record_case(success=True,
+                **{"input": input, "task": task_str, "results": results, "response": response, "during": during,
+                   "op": "response"})
+    logger.info(f"response: {response}")
+    return answer
+
+inputs = [
+        "Given a collection of image A: /examples/a.jpg, B: /examples/b.jpg, C: /examples/c.jpg, please tell me how many zebras in these picture?"
+        "Can you give me a picture of a small bird flying in the sky with trees and clouds. Generate a high definition image if possible.",
+        "Please answer all the named entities in the sentence: Iron Man is a superhero appearing in American comic books published by Marvel Comics. The character was co-created by writer and editor Stan Lee, developed by scripter Larry Lieber, and designed by artists Don Heck and Jack Kirby.",
+        "please dub for me: 'Iron Man is a superhero appearing in American comic books published by Marvel Comics. The character was co-created by writer and editor Stan Lee, developed by scripter Larry Lieber, and designed by artists Don Heck and Jack Kirby.'"
+        "Given an image: https://huggingface.co/datasets/mishig/sample_images/resolve/main/palace.jpg, please answer the question: What is on top of the building?",
+        "Please generate a canny image based on /examples/f.jpg"
+    ]
+
+for input in inputs:
+        messages = [{"role": "user", "content": input}]
+        t=chat_huggingface(messages, return_planning=False, return_results=True)
+        print(t)
