@@ -19,13 +19,18 @@ from PIL import Image, ImageDraw
 from diffusers.utils import load_image
 from pydub import AudioSegment
 import threading
-from get_token_ids import get_token_ids_for_task_parsing, get_token_ids_for_choose_model, count_tokens, get_max_context_length
+from Server.get_token_ids import get_token_ids_for_task_parsing, get_token_ids_for_choose_model, count_tokens, get_max_context_length
 from huggingface_hub import InferenceApi
 from queue import Queue
+from pathlib import Path
 
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
+path=os.path.join(BASE_DIR,"Server")
 
 load_dotenv()
-config_file = "configs/config.yaml"
+config_file=os.path.join(path,"configs","config.yaml")
 config = yaml.load(open(config_file, "r"), Loader=yaml.FullLoader)
 os.makedirs("logs", exist_ok=True)
 os.makedirs("public/images", exist_ok=True)
@@ -72,7 +77,7 @@ if inference_mode!="huggingface":
 task_parsing_highlight_ids = get_token_ids_for_task_parsing(LLM_encoding)
 choose_model_highlight_ids = get_token_ids_for_choose_model(LLM_encoding)
 
-MODELS = [json.loads(line) for line in open("data/p0_models.jsonl", "r").readlines()]
+MODELS = [json.loads(line) for line in open(os.path.join(path,"data","p1_models.jsonl"), "r").readlines()]
 MODELS_MAP = {}
 for model in MODELS:
     tag = model["task"]
@@ -101,9 +106,9 @@ elif "LLAMA_TOKEN" in os.environ and os.getenv("LLAMA_TOKEN").startswith("hf_"):
 else:
     raise ValueError(f"Incorrect HuggingFace token. Please check your {config} file.")
 
-parse_task_demos_or_presteps = open(config["demos_or_presteps"]["parse_task"], "r").read()
-choose_model_demos_or_presteps = open(config["demos_or_presteps"]["choose_model"], "r").read()
-response_results_demos_or_presteps = open(config["demos_or_presteps"]["response_results"], "r").read()
+parse_task_demos_or_presteps = open(os.path.join(path,config["demos_or_presteps"]["parse_task"]), "r").read()
+choose_model_demos_or_presteps = open(os.path.join(path,config["demos_or_presteps"]["choose_model"]), "r").read()
+response_results_demos_or_presteps = open(os.path.join(path,config["demos_or_presteps"]["response_results"]), "r").read()
 
 parse_task_prompt = config["prompt"]["parse_task"]
 choose_model_prompt = config["prompt"]["choose_model"]
@@ -798,7 +803,6 @@ def chat_huggingface(messages, return_planning = False, return_results = False):
         logger.info(f"response: {response}")
         return answer
 
-
 def cli():
     messages = []
     print("Welcome to Jarvis! A collaborative system that consists of an LLM as the controller and numerous expert models as collaborative executors. Jarvis can plan tasks, schedule Hugging Face models, generate friendly responses based on your requests, and help you with many things. Please enter your request (`exit` to exit).")
@@ -808,10 +812,11 @@ def cli():
             break
         messages.append({"role": "user", "content": message})
         answer = chat_huggingface(messages,  return_planning=False, return_results=False)
-        print("[ Jarvis ]: ", answer["message"])
+        ans=answer['message']
+        print("[ Jarvis ]: ", ans)
         messages.append({"role": "assistant", "content": answer["message"]})
 
 
 if __name__=="__main__":
     cli()
-
+    MODELS
