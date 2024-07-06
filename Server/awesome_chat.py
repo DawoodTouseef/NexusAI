@@ -504,6 +504,26 @@ def get_model_status(model_id, url, headers, queue = None):
         if queue:
             queue.put((model_id, False, endpoint_type))
         return False
+def extract_json_from_string(input_str):
+    # Simplified regular expression pattern to identify JSON-like structures
+    json_pattern = r'\{.*?\}'
+
+    # Find all matches in the input string
+    matches = re.findall(json_pattern, input_str, re.DOTALL)
+
+    # List to store valid JSON objects
+    json_objects = []
+
+    for match in matches:
+        try:
+            # Attempt to load the match as a JSON object
+            json_obj = json.loads(match)
+            json_objects.append(json_obj)
+        except json.JSONDecodeError:
+            # If it's not a valid JSON, skip it
+            continue
+
+    return json_objects
 
 def get_avaliable_models(candidates, topk=5):
     all_available_models = {"local": [], "huggingface": []}
@@ -684,10 +704,13 @@ def run_task(input, command, results):
                 choose = json.loads(choose_str)
                 best_model_id = choose["id"]
             except Exception as e:
-                logger.warning(
-                    f"the response [ {choose_str} ] is not a valid JSON, try to find the model id and reason in the response.")
-                choose_str = find_json(choose_str)
-                best_model_id, reason, choose = get_id_reason(choose_str)
+                choose=extract_json_from_string(choose_str)
+                best_model_id = choose[0]["id"]
+                if choose==[]:
+                    logger.warning(
+                        f"the response [ {choose_str} ] is not a valid JSON, try to find the model id and reason in the response.")
+                    choose_str = find_json(choose_str)
+                    best_model_id, reason, choose = get_id_reason(choose_str)
         inference_result = huggingface_model_inference(best_model_id, args, command['task'])
         if "error" in inference_result:
             logger.warning(f"Inference error: {inference_result['error']}")
@@ -698,7 +721,6 @@ def run_task(input, command, results):
             return False
 
         results[id] = collect_result(command, choose, inference_result)
-        print(results)
         return True
 
 
@@ -787,7 +809,7 @@ def chat_huggingface(messages, return_planning = False, return_results = False):
         logger.debug(results)
         if return_results:
             return results
-
+        print(results)
         response = response_results(input, results).strip()
 
         end = time.time()
