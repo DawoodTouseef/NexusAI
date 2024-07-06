@@ -339,11 +339,10 @@ def response_results(input,results:dict):
     return send_request(data)
 
 
-def collect_result(command, inference_result,choose=None):
+def collect_result(command,choose, inference_result):
     result = {"task": command}
     result["inference result"] = inference_result
-    if choose:
-        result["choose model result"] = choose
+    result["choose model result"] = choose
     logger.debug(f"inference result: {inference_result}")
     return result
 
@@ -690,7 +689,6 @@ def run_task(input, command, results):
                 choose_str = find_json(choose_str)
                 best_model_id, reason, choose = get_id_reason(choose_str)
         inference_result = huggingface_model_inference(best_model_id, args, command['task'])
-
         if "error" in inference_result:
             logger.warning(f"Inference error: {inference_result['error']}")
             record_case(success=False,
@@ -700,6 +698,7 @@ def run_task(input, command, results):
             return False
 
         results[id] = collect_result(command, choose, inference_result)
+        print(results)
         return True
 
 
