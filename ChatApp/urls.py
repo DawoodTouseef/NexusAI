@@ -6,6 +6,6 @@ urlpatterns=[
     path("results/",results,name="results"),
     path("chat/",chat,name="chat"),
     path("new_thread/",new_thread,name="new-thread"),
-    path('thread_info/<int:id>/',thread_info,name="thread-info"),
+    path('thread_info/<string:id>/',thread_info,name="thread-info"),
 
 ]
