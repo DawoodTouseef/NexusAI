@@ -12,13 +12,13 @@ def task(request):
     data = request.data
     messages = data["messages"]
     response = chat_huggingface(messages,return_planning=True)
-    return JsonResponse(response)
+    return JsonResponse({"task":response})
 
 @ratelimit(key='ip', rate='100/m', method='POST', block=True)
 @api_view(['POST'])
 def results(request):
     data = request.data
-    messages = list(data)
+    messages = data["messages"]
     response = chat_huggingface(messages, return_results=True)
     return JsonResponse(response)
 
@@ -27,7 +27,7 @@ def results(request):
 def chat(requests):
     data=requests.data
     messages = data["messages"]
-    response=chat_huggingface(messages)
+    response=chat_huggingface(messages,return_planning=False, return_results=False)
     return JsonResponse(response)
 
 @api_view(['POST'])

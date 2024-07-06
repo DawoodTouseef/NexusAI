@@ -349,6 +349,7 @@ def collect_result(command, inference_result,choose=None):
 
 
 def huggingface_model_inference(model_id, data, task):
+    result = {}
     task_url = f"https://api-inference.huggingface.co/models/{model_id}"
     inference = InferenceApi(repo_id=model_id, token=os.getenv("LLAMA_TOKEN"))
     # NLP tasks
@@ -367,7 +368,7 @@ def huggingface_model_inference(model_id, data, task):
                 "conversational", "text-generation"]:
         inputs = data["text"]
         model=GenerateAPI(model="llama3")
-        result = {"generated text":model.generate(inputs,options={"num_predicts":4096}).response}
+        result["generated text"]=model.generate(inputs,options={"num_predicts":4096}).response
 
     # CV tasks
     if task == "visual-question-answering" or task == "document-question-answering":
@@ -385,7 +386,7 @@ def huggingface_model_inference(model_id, data, task):
         json_data["inputs"]["question"] = text
         json_data["inputs"]["image"] = img_base64.decode("utf-8")
         model=GenerateAPI("llava")
-        result = {"generated text":model.generate(prompt=text,images=[f"public/images/{name}.png"])}
+        result["generated text"]=model.generate(prompt=text,images=[f"public/images/{name}.png"])
         # result = inference(inputs) # not support
 
     if task == "image-to-image":
@@ -404,8 +405,7 @@ def huggingface_model_inference(model_id, data, task):
         img = inference(inputs)
         name = str(uuid.uuid4())[:4]
         img.save(f"public/images/{name}.png")
-        result = {}
-        result["generated image"] = f"/images/{name}.png"
+        result["generated image"] = f"Path of the Image='/images/{name}.png'"
 
     if task == "image-segmentation":
         img_url = data["image"]
@@ -426,8 +426,7 @@ def huggingface_model_inference(model_id, data, task):
             image.paste(layer, (0, 0), mask)
         name = str(uuid.uuid4())[:4]
         image.save(f"public/images/{name}.jpg")
-        result = {}
-        result["generated image"] = f"/images/{name}.jpg"
+        result["generated image"] = f"Path of the Image='/images/{name}.jpg'"
         result["predicted"] = predicted
 
     if task == "object-detection":
@@ -448,8 +447,7 @@ def huggingface_model_inference(model_id, data, task):
             draw.text((box["xmin"] + 5, box["ymin"] - 15), label["label"], fill=color_map[label["label"]])
         name = str(uuid.uuid4())[:4]
         image.save(f"public/images/{name}.jpg")
-        result = {}
-        result["generated image"] = f"/images/{name}.jpg"
+        result["generated image"] =f"Path of the Image='/images/{name}.jpg'"
         result["predicted"] = predicted
 
     if task in ["image-classification"]:
@@ -475,7 +473,7 @@ def huggingface_model_inference(model_id, data, task):
         name = str(uuid.uuid4())[:4]
         with open(f"public/audios/{name}.flac", "wb") as f:
             f.write(response.content)
-        result = {"generated audio": f"/audios/{name}.flac"}
+        result["generated audio"]=f"/audios/{name}.flac"
     if task in ["automatic-speech-recognition", "audio-to-audio", "audio-classification"]:
         inference = InferenceApi(repo_id=model_id, token=os.getenv("LLAMA_TOKEN"))
         audio_url = data["audio"]
@@ -493,7 +491,7 @@ def huggingface_model_inference(model_id, data, task):
             audio = AudioSegment.from_file(BytesIO(content))
             name = str(uuid.uuid4())[:4]
             audio.export(f"public/audios/{name}.{type}", format=type)
-            result = {"generated audio": f"/audios/{name}.{type}"}
+            result["generated audio"] =f"Path of the Audio='/audios/{name}.{type}'"
     return result
 
 def get_model_status(model_id, url, headers, queue = None):

@@ -22,4 +22,4 @@ def get_model(repo_id,MODEL,local_dir="hf_cache"):
 
 if __name__=="__main__":
     MODELS = [json.loads(line) for line in open("/home/lenovo/NexusAI/Server/data/p0_models.jsonl", "r").readlines()]
-    get_model("deepseek-ai/deepseek-coder-1.3b-instruct",MODELS)
+    get_model("microsoft/Florence-2-base",MODELS)
