@@ -2,7 +2,6 @@ from rest_framework.decorators import api_view
 from django.http import JsonResponse
 from Server.awesome_chat import chat_huggingface
 from django_ratelimit.decorators import ratelimit
-from .models import *
 import os
 import binascii
 from .serializers import *
