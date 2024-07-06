@@ -77,7 +77,7 @@ if inference_mode!="huggingface":
 task_parsing_highlight_ids = get_token_ids_for_task_parsing(LLM_encoding)
 choose_model_highlight_ids = get_token_ids_for_choose_model(LLM_encoding)
 
-MODELS = [json.loads(line) for line in open(os.path.join(path,"data","p1_models.jsonl"), "r").readlines()]
+MODELS = [json.loads(line) for line in open(os.path.join(path,"data","p0_models.jsonl"), "r").readlines()]
 MODELS_MAP = {}
 for model in MODELS:
     tag = model["task"]
