@@ -14,6 +14,7 @@ class User(AbstractUser):
         return self.username
 
 class Thread(models.Model):
+    title_id=models.CharField(max_length=2500)
     title = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
