@@ -809,7 +809,6 @@ def chat_huggingface(messages, return_planning = False, return_results = False):
         logger.debug(results)
         if return_results:
             return results
-        print(results)
         response = response_results(input, results).strip()
 
         end = time.time()
