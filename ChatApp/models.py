@@ -32,7 +32,7 @@ class Chat(models.Model):
     def __str__(self):
         return f'Chat by {self.sender.username} in {self.thread.title}'
 
-class Response(models.Model):
+class AIResponse(models.Model):
     chat = models.ForeignKey(Chat, related_name='responses', on_delete=models.CASCADE)
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)

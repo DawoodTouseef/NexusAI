@@ -5,6 +5,23 @@ import sys
 
 
 def main():
+    """Added by ngrok"""
+    # This block handles 'make rundjangosite' which uses this manage.py as the entry point.
+    # Set env variable to protect against the autoreloader.
+    if os.getenv("NGROK_LISTENER_RUNNING") is None:
+        os.environ["NGROK_LISTENER_RUNNING"] = "true"
+        import asyncio, multiprocessing, ngrok
+
+        async def setup():
+            ngrok.set_auth_token('2Zlki2VMdQ0OvQEIl9DY50DzfdD_6gQiBym2A1SdtXfLtzUut')
+            listen = sys.argv[2] if len(sys.argv) > 2 else "localhost:5000"
+            listener = await ngrok.default()
+            print(f"Forwarding to {listen} from ingress url: {listener.url()}")
+            listener.forward(listen)
+
+        asyncio.run(setup())
+    """End added by ngrok"""
+
     """Run administrative tasks."""
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ChatBot.settings')
     try:
@@ -18,5 +35,5 @@ def main():
     execute_from_command_line(sys.argv)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
