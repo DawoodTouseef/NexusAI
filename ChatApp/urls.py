@@ -17,4 +17,4 @@ path('token/',jwt_views.TokenObtainPairView.as_view(),
           name ='token_refresh')
 
 ]
-handler404="ChatApp.views.error_404"
+#handler404="ChatApp.views.error_404"
