@@ -1,0 +1,46 @@
+.signin-form {
+  width: 300px;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #f5f5f5;
+  background: transparent;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+.signin-form p {
+  text-align: center;
+}
+.signin-container {
+  margin-left: 40%;
+  margin-top: 10%;
+}
+
+.signin-form h2 {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 5px;
+  margin-left: 8px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 8px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 15px;
+}
+
+.error-message {
+  color: red;
+  font-size: 14px;
+  text-align: center; /* Centering error messages */
+}
