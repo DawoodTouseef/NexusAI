@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { Link } from "react-router-dom"; // Import Link from react-router-dom
 import "./Main.css";
 import { assets } from "../../assets/assets";
@@ -13,9 +13,8 @@ const Mane = () => {
     resultData,
     setInput,
     input,
-    isAuthenticated, // Assuming this context/state indicates if user is authenticated
   } = useContext(Context);
-
+  const isAuthenticated=localStorage.getItem("isAuthenticate");
   const handleCardClick = (promptText) => {
     setInput(promptText);
   };
@@ -29,11 +28,13 @@ const Mane = () => {
       onSent();
     }
   };
-
+  useEffect(()=>{
+    console.log(isAuthenticated)
+  },[])
   return (
     <div className="main">
       <div className="nav">
-        <p>Nexus Ai</p>
+        <p>NexusAI</p>
         {isAuthenticated ? (
           <img src={assets.user_icon} alt="User Avatar" />
         ) : (
@@ -45,7 +46,7 @@ const Mane = () => {
           <>
             <div className="greet">
               <p>
-                <span>Hello, Dracule</span>
+                <span>Hello, {localStorage.getItem('username')}</span>
               </p>
               <p>How can I help you today?</p>
             </div>
@@ -92,7 +93,7 @@ const Mane = () => {
         ) : (
           <div className="result">
             <div className="result-title">
-              <img src={assets.user} alt="User Avatar" />
+              <img src={assets.user_icon} alt="User Avatar" />
               <p>{recentPrompt}</p>
             </div>
             <div className="result-data">
@@ -118,6 +119,7 @@ const Mane = () => {
               value={input}
               type="text"
               placeholder="Enter the Prompt Here"
+              
             />
             <div>
               <img src={assets.gallery_icon} alt="Icon" />
@@ -127,6 +129,7 @@ const Mane = () => {
                 alt="Icon"
                 onClick={() => {
                   onSent();
+                  setInput('')
                 }}
               />
             </div>
@@ -144,6 +147,7 @@ const Mane = () => {
           )} */}
         </div>
       </div>
+     
     </div>
   );
 };

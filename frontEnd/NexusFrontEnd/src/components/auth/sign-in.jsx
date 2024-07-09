@@ -1,17 +1,23 @@
-import React, { useState } from "react";
+import React, { useState ,useContext} from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import "./sign-in.css";
 import envCompatible from "vite-plugin-env-compatible";
+import { assets  } from "../../assets/assets";
+import { Context } from "../../context/Context";
+
 
 // Access the environment variable
-const url = "https://4c62-202-12-81-251.ngrok-free.app";
+const url = assets.API_URL;
 
 const SignIn = () => {
   const [formData, setFormData] = useState({
     username: "",
     password: "",
   });
+  const {
+    setAuthenticated,
+  } = useContext(Context);
   const [username, setUsername] = useState("");
 
   const [errors, setErrors] = useState({});
@@ -24,22 +30,24 @@ const SignIn = () => {
     };
     try {
       // Create the POST request
-      console.log(`${url}/token/`);
       const { data } = await axios.post(`${url}/token/`, user, {
         headers: { "Content-Type": "application/json" },
       });
-
       // Initialize the access & refresh token in localStorage.
       localStorage.clear();
       localStorage.setItem("access_token", data.access);
       localStorage.setItem("refresh_token", data.refresh);
+      localStorage.setItem('username',username);
+      localStorage.setItem("isAuthenticate",true)
       axios.defaults.headers.common[
         "Authorization"
       ] = `Bearer ${data["access"]}`;
+      setAuthenticated(true);
       window.location.href = "/";
     } catch (error) {
       // Handle errors here
       console.error("There was an error logging in:", error);
+      localStorage.setItem("isAuthenticate",false)
       setErrors({
         submit:
           "Failed to sign in. Please check your credentials and try again.",

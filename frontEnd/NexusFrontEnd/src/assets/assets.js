@@ -14,6 +14,7 @@ import code_icon from './code_icon.png'
 import send_icon from './send_icon.png'
 import gemini_icon from './gemini_icon.png'
 
+const API_URL="http://127.0.0.1:5000"
 export const assets = {
     history_icon,
     menu_icon,
@@ -29,5 +30,6 @@ export const assets = {
     message_icon,
     code_icon,
     send_icon,
-    gemini_icon
+    gemini_icon,
+    API_URL
 }

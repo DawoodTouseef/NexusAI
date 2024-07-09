@@ -10,7 +10,7 @@ const ContextProvider = (props) => {
     const [showResults, setShowResults] = useState(false);
     const [loading, setLoading] = useState(false);
     const [resultData, setResultData] = useState("");
-
+    const [isAuthenticated,setAuthenticated]=useState(false);
     const delayPara = (index, nextWord) => {
         setTimeout(function () {
             setResultData((prev) => prev + nextWord);
@@ -74,6 +74,8 @@ const ContextProvider = (props) => {
         loading,
         resultData,
         newChat,
+        isAuthenticated,
+        setAuthenticated,
     };
 
     return (
