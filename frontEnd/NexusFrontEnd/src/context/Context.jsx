@@ -7,10 +7,10 @@ const ContextProvider = (props) => {
     const [input, setInput] = useState("");
     const [recentPrompt, setRecentPrompt] = useState("");
     const [prevPrompts, setPrevPrompts] = useState([]);
+    const [prevresponse, setresponse] = useState([]);
     const [showResults, setShowResults] = useState(false);
     const [loading, setLoading] = useState(false);
     const [resultData, setResultData] = useState("");
-    const [isAuthenticated,setAuthenticated]=useState(false);
     const delayPara = (index, nextWord) => {
         setTimeout(function () {
             setResultData((prev) => prev + nextWord);
@@ -33,6 +33,7 @@ const ContextProvider = (props) => {
             setPrevPrompts(prev => [...prev, input]);
             setRecentPrompt(input);
             response = await runlocal(input);
+            setresponse(prev =>[...prev,response]);
         }
 
         try {
@@ -72,8 +73,8 @@ const ContextProvider = (props) => {
         loading,
         resultData,
         newChat,
-        isAuthenticated,
-        setAuthenticated,
+        setresponse,
+        prevresponse,
     };
 
     return (
