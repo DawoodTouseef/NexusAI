@@ -4,11 +4,13 @@ import {
     HarmCategory,
     HarmBlockThreshold,
 } from "@google/generative-ai";
+import axios from "axios";
 
+const url="http://127.0.0.1:5000"
 const MODEL_NAME = "gemini-1.0-pro";
 const API_KEY = "AIzaSyAGdEZLRMpGx1VLy-iK4kKDUApSa5z_YZQ";
 
-async function runChat(prompt) {
+export async function runChat(prompt) {
     const genAI = new GoogleGenerativeAI(API_KEY);
     const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
@@ -50,5 +52,18 @@ async function runChat(prompt) {
     console.log(response.text());
     return response.text();
 }
+export async function runlocal(prompt){
+    const messages={
+        "messages":[{
+            "role":"user",
+            "content":prompt
+        }]
+    }
+    const response  = await axios.post(`${url}/chat/`, messages, {
+        headers: { "Content-Type": "application/json" },
+      });
+    const data =await response.data;
+    return data.message
+    
+}
 
-export default runChat;

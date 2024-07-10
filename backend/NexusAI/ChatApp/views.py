@@ -1,6 +1,6 @@
 from rest_framework.decorators import api_view
 from django.http import JsonResponse
-from Server.awesome_chat import chat_huggingface
+from backend.NexusAI.Server.awesome_chat import chat_huggingface
 from django_ratelimit.decorators import ratelimit
 import os
 import binascii

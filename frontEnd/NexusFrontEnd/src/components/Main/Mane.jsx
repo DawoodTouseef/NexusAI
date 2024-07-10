@@ -26,11 +26,10 @@ const Mane = () => {
   const handleInputKeyPress = (e) => {
     if (e.key === "Enter") {
       onSent();
+      setInput('');
     }
   };
-  useEffect(()=>{
-    console.log(isAuthenticated)
-  },[])
+  
   return (
     <div className="main">
       <div className="nav">

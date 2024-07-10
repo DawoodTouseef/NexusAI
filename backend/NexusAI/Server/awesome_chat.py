@@ -1,5 +1,5 @@
 from huggingface_hub import InferenceClient
-from ollama_python.endpoints.generate import GenerateAPI
+from backend.NexusAI.ollama_python.endpoints.generate import GenerateAPI
 from dotenv import load_dotenv
 import base64
 import copy
@@ -19,7 +19,7 @@ from PIL import Image, ImageDraw
 from diffusers.utils import load_image
 from pydub import AudioSegment
 import threading
-from Server.get_token_ids import get_token_ids_for_task_parsing, get_token_ids_for_choose_model, count_tokens, get_max_context_length
+from backend.NexusAI.Server.get_token_ids import get_token_ids_for_task_parsing, get_token_ids_for_choose_model, count_tokens, get_max_context_length
 from huggingface_hub import InferenceApi
 from queue import Queue
 from pathlib import Path
