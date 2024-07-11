@@ -34,3 +34,8 @@ class UserLogin_serializers(serializers.Serializer):
         user=authenticate(username=validated_data.get("username"),password=validated_data.get("password"))
         if user:
             return user
+
+class ALL_Chat_serializers(serializers.Serializer):
+    class Meta:
+        model=Chat
+        fields="__all__"

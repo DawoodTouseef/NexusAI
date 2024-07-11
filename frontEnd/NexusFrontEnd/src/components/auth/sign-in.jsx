@@ -42,7 +42,6 @@ const SignIn = () => {
       axios.defaults.headers.common[
         "Authorization"
       ] = `Bearer ${data["access"]}`;
-      setAuthenticated(true);
       window.location.href = "/";
     } catch (error) {
       // Handle errors here

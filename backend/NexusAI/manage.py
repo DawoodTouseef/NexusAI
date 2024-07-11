@@ -3,9 +3,8 @@
 import os
 import sys
 
-
-def main():
-    """Added by ngrok"""
+"""
+"Added by ngrok"
     # This block handles 'make rundjangosite' which uses this manage.py as the entry point.
     # Set env variable to protect against the autoreloader.
     if os.getenv("NGROK_LISTENER_RUNNING") is None:
@@ -20,8 +19,9 @@ def main():
             listener.forward(listen)
 
         asyncio.run(setup())
-    """End added by ngrok"""
-
+    "End added by ngrok"
+"""
+def main():
     """Run administrative tasks."""
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ChatBot.settings')
     try:

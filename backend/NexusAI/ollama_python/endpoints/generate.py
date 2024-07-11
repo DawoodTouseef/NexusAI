@@ -1,4 +1,4 @@
-from ollama_python.models.generate import (
+from backend.NexusAI.ollama_python.models.generate import (
     Completion,
     Options,
     StreamCompletion,
@@ -6,7 +6,7 @@ from ollama_python.models.generate import (
     Message,
     StreamChatCompletion,
 )
-from ollama_python.endpoints.base import BaseAPI
+from backend.NexusAI.ollama_python.endpoints.base import BaseAPI
 from typing import BinaryIO, Optional, Generator, Union
 
 

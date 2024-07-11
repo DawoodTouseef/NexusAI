@@ -3,6 +3,7 @@
   min-height: 100vh;
   padding-bottom: 15vh;
   position: relative;
+  background-color: #F1EAFF;
 }
 .main .nav {
   display: flex;
@@ -43,6 +44,7 @@
   border-radius: 10px;
   position: relative;
   cursor: pointer;
+  background-color: #DCBFFF;
 }
 .main .card img {
   width: 35px;

@@ -137,15 +137,15 @@ class Options(BaseModel):
     )
     typical_p: Optional[float] = None
     repeat_last_n: Optional[int] = Field(
-        None,
+        -1,
         description="Sets how far back for the model to look back to prevent repetition. (Default: 64, 0 = disabled, -1 = num_ctx)",
     )
     temperature: Optional[float] = Field(
-        None,
+        0.8,
         description="The temperature of the model. Increasing the temperature will make the model answer more creatively. (Default: 0.8)",
     )
     repeat_penalty: Optional[float] = Field(
-        None,
+        1.5,
         description="Sets how strongly to penalize repetitions. A higher value (e.g., 1.5) will penalize repetitions more strongly, while a lower value (e.g., 0.9) will be more lenient. (Default: 1.1)",
     )
     presence_penalty: Optional[float] = None

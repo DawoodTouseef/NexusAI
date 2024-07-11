@@ -52,18 +52,22 @@ export async function runChat(prompt) {
     console.log(response.text());
     return response.text();
 }
-export async function runlocal(prompt){
+export async function runlocal(prompt,file=null){
     const messages={
         "messages":[{
             "role":"user",
             "content":prompt
-        }]
+        }],
+    }
+    if(file){
+        messages.files=file;
     }
     const response  = await axios.post(`${url}/chat/`, messages, {
         headers: { "Content-Type": "application/json" },
       });
+    
     const data =await response.data;
-    return data.message
+    return data;
     
 }
 

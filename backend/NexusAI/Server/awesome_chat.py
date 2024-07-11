@@ -347,7 +347,7 @@ def collect_result(command,choose, inference_result):
     return result
 
 
-def huggingface_model_inference(model_id, data, task):
+def huggingface_model_inference(model_id, data, task,path=None):
     result = {}
     task_url = f"https://api-inference.huggingface.co/models/{model_id}"
     inference = InferenceApi(repo_id=model_id, token=os.getenv("LLAMA_TOKEN"))
@@ -367,7 +367,7 @@ def huggingface_model_inference(model_id, data, task):
                 "conversational", "text-generation"]:
         inputs = data["text"]
         model=GenerateAPI(model="llama3")
-        result["generated text"]=model.generate(inputs,options={"num_predicts":4096}).response
+        result["generated text"]=model.generate(inputs,options={"num_predict":4096}).response
 
     # CV tasks
     if task == "visual-question-answering" or task == "document-question-answering":
@@ -398,13 +398,14 @@ def huggingface_model_inference(model_id, data, task):
         result = r.json()
         if "path" in result:
             result["generated image"] = result.pop("path")
-
+            path['path']=result.pop('path')
     if task == "text-to-image":
         inputs = data["text"]
         img = inference(inputs)
         name = str(uuid.uuid4())[:4]
         img.save(f"public/images/{name}.png")
         result["generated image"] = f"Path of the Image='/images/{name}.png'"
+        path['path']=f'/images/{name}.png'
 
     if task == "image-segmentation":
         img_url = data["image"]
@@ -426,6 +427,7 @@ def huggingface_model_inference(model_id, data, task):
         name = str(uuid.uuid4())[:4]
         image.save(f"public/images/{name}.jpg")
         result["generated image"] = f"Path of the Image='/images/{name}.jpg'"
+        path["path"] = f"/images/{name}.jpg"
         result["predicted"] = predicted
 
     if task == "object-detection":
@@ -447,6 +449,7 @@ def huggingface_model_inference(model_id, data, task):
         name = str(uuid.uuid4())[:4]
         image.save(f"public/images/{name}.jpg")
         result["generated image"] =f"Path of the Image='/images/{name}.jpg'"
+        result["path"] = f"/images/{name}.jpg"
         result["predicted"] = predicted
 
     if task in ["image-classification"]:
@@ -473,6 +476,7 @@ def huggingface_model_inference(model_id, data, task):
         with open(f"public/audios/{name}.flac", "wb") as f:
             f.write(response.content)
         result["generated audio"]=f"/audios/{name}.flac"
+        path["path"] = f"/audios/{name}.flac"
     if task in ["automatic-speech-recognition", "audio-to-audio", "audio-classification"]:
         inference = InferenceApi(repo_id=model_id, token=os.getenv("LLAMA_TOKEN"))
         audio_url = data["audio"]
@@ -491,7 +495,8 @@ def huggingface_model_inference(model_id, data, task):
             name = str(uuid.uuid4())[:4]
             audio.export(f"public/audios/{name}.{type}", format=type)
             result["generated audio"] =f"Path of the Audio='/audios/{name}.{type}'"
-    return result
+            path["path"] = f"/audios/{name}.{type}"
+    return result,path
 
 def get_model_status(model_id, url, headers, queue = None):
     endpoint_type = "huggingface"
@@ -560,7 +565,7 @@ def get_avaliable_models(candidates, topk=5):
 
     return all_available_models
 
-def run_task(input, command, results):
+def run_task(input, command, results,path=None):
     id = command["id"]
     args = command["args"]
     task = command["task"]
@@ -711,7 +716,7 @@ def run_task(input, command, results):
                         f"the response [ {choose_str} ] is not a valid JSON, try to find the model id and reason in the response.")
                     choose_str = find_json(choose_str)
                     best_model_id, reason, choose = get_id_reason(choose_str)
-        inference_result = huggingface_model_inference(best_model_id, args, command['task'])
+        inference_result ,path= huggingface_model_inference(best_model_id, args, command['task'],path=path)
         if "error" in inference_result:
             logger.warning(f"Inference error: {inference_result['error']}")
             record_case(success=False,
@@ -747,27 +752,36 @@ def extract_lists(input_str):
 def chat_huggingface(messages, return_planning = False, return_results = False):
     start = time.time()
     context = messages[:-1]
-    input = messages[-1]["content"]
+    inputs = messages[-1]["content"]
     logger.info("*" * 80)
-    logger.info(f"input: {input}")
+    logger.info(f"input: {inputs}")
 
-    task_str = parse_task(context, input)
+    task_str = parse_task(context, inputs)
     try:
         tasks=extract_lists(task_str)[0]
     except IndexError as e:
         tasks=[]
     if tasks == []:  # using LLM response for empty task
         record_case(success=False,
-                    **{"input": input, "task": [], "reason": "task parsing fail: empty", "op": "chitchat"})
+                    **{"input": inputs, "task": [], "reason": "task parsing fail: empty", "op": "chitchat"})
         response = chitchat(messages)
         return {"message": response}
 
-    if len(tasks) == 1 and tasks[0]["task"] in ["summarization", "translation", "conversational", "text-generation",
+    if len(tasks) == 1 and tasks[0]["task"] in ["summarization", "conversational", "text-generation",
                                                 "text2text-generation"]:
-        record_case(success=True, **{"input": input, "task": tasks, "reason": "chitchat tasks", "op": "chitchat"})
+        record_case(success=True, **{"input": inputs, "task": tasks, "reason": "chitchat tasks", "op": "chitchat"})
         response = chitchat(messages)
         return {"message": response}
-
+    if len(tasks)==1:
+        record_case(success=True, **{"input": inputs, "task": tasks, "reason": "Single  tasks", "op": tasks[0]['task']})
+        d=dict()
+        path=dict
+        done=run_task(inputs,tasks[0],d,path)
+        if done:
+            results=d.copy()
+            paths=path.copy()
+            response=response_results(inputs,results).strip()
+            return {'message':response,"path":paths}
     tasks = unfold(tasks)
     tasks = fix_dep(tasks)
     logger.debug(tasks)
@@ -775,6 +789,69 @@ def chat_huggingface(messages, return_planning = False, return_results = False):
     if return_planning:
         return tasks
 
+    results = {}
+    threads = []
+    tasks = tasks[:]
+    d = dict()
+    retry = 0
+    while True:
+        num_thread = len(threads)
+        for task in tasks:
+            # logger.debug(f"d.keys(): {d.keys()}, dep: {dep}")
+            for dep_id in task["dep"]:
+                if dep_id >= task["id"]:
+                    task["dep"] = [-1]
+                    break
+            dep = task["dep"]
+            if dep[0] == -1 or len(list(set(dep).intersection(d.keys()))) == len(dep):
+                tasks.remove(task)
+                thread = threading.Thread(target=run_task, args=(inputs, task, d))
+                thread.start()
+                threads.append(thread)
+        if num_thread == len(threads):
+            time.sleep(0.5)
+            retry += 1
+        if retry > 160:
+            logger.debug("User has waited too long, Loop break.")
+            break
+        if len(tasks) == 0:
+            break
+        for thread in threads:
+            thread.join()
+
+        results = d.copy()
+        logger.debug(results)
+        if return_results:
+            return results
+        response = response_results(inputs, results).strip()
+
+        end = time.time()
+        during = end - start
+
+        answer = {"message": response}
+        record_case(success=True,
+                    **{"input": inputs, "task": task_str, "results": results, "response": response, "during": during,
+                       "op": "response"})
+        logger.info(f"response: {response}")
+        return answer
+def task_planning(messages):
+    context = messages[:-1]
+    input = messages[-1]["content"]
+    logger.info("*" * 80)
+    logger.info(f"input: {input}")
+
+    task_str = parse_task(context, input)
+    try:
+        tasks = extract_lists(task_str)[0]
+    except IndexError as e:
+        tasks = []
+
+    tasks = unfold(tasks)
+    tasks = fix_dep(tasks)
+    logger.debug(tasks)
+    return tasks
+
+def results(tasks):
     results = {}
     threads = []
     tasks = tasks[:]
@@ -807,19 +884,7 @@ def chat_huggingface(messages, return_planning = False, return_results = False):
 
         results = d.copy()
         logger.debug(results)
-        if return_results:
-            return results
-        response = response_results(input, results).strip()
-
-        end = time.time()
-        during = end - start
-
-        answer = {"message": response}
-        record_case(success=True,
-                    **{"input": input, "task": task_str, "results": results, "response": response, "during": during,
-                       "op": "response"})
-        logger.info(f"response: {response}")
-        return answer
+        return results
 
 def cli():
     messages = []

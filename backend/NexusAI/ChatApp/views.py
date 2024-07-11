@@ -1,6 +1,6 @@
 from rest_framework.decorators import api_view
 from django.http import JsonResponse
-from backend.NexusAI.Server.awesome_chat import chat_huggingface
+from backend.NexusAI.Server.awesome_chat import chat_huggingface,task_planning
 from django_ratelimit.decorators import ratelimit
 import os
 import binascii
@@ -12,14 +12,15 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
 from .models import *
 from rest_framework.exceptions import AuthenticationFailed
-from django.shortcuts import render
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+from rest_framework_simplejwt.tokens import AccessToken
 
 @ratelimit(key='ip', rate='100/m', method='POST', block=True)
 @api_view(["POST"])
 def task(request):
     data = request.data
     messages = data["messages"]
-    response = chat_huggingface(messages,return_planning=True)
+    response = task_planning(messages)
     return JsonResponse({"task":response})
 
 @ratelimit(key='ip', rate='100/m', method='POST', block=True)
@@ -69,7 +70,7 @@ class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
-
+        print(request.user)
         try:
             refresh_token = request.data["refresh_token"]
             token = RefreshToken(refresh_token)
@@ -95,6 +96,39 @@ class Login(APIView):
         if not user_obj.check_password(raw_password=password):
             raise AuthenticationFailed("Incorrect Password or Email")
 
-def error_404(request,exception):
-    print(exception)
-    return render(request,"exception.html")
+class ALL_CHATS(APIView):
+    permission_classes = (IsAuthenticated,)
+    def post(self,request,*args,**kwargs):
+        thread=Thread.objects.filter(title_id=request.data['id'])
+        chats=Chat.objects.filter(thread=thread)
+        if chats:
+            chat_seriallizer=ALL_Chat_serializers(chats,many=True)
+            return JsonResponse(chat_seriallizer.data,status=status.HTTP_200_OK)
+
+        else:
+            return JsonResponse({"detail":"No Chats Found"},status=status.HTTP_302_FOUND)
+
+class ValidateTokenView(APIView):
+    def post(self, request, *args, **kwargs):
+        print(request.user)
+        token = request.data.get('token')
+        if not token:
+            return Response({'error': 'Token is required'}, status=400)
+
+        try:
+            # Decode the token without verifying it
+            decoded_token = AccessToken(token)
+            return Response({'valid': True, 'token_data': decoded_token})
+        except (InvalidToken, TokenError) as e:
+            return Response({'valid': False, 'error': str(e)}, status=401)
+
+class Huggingpt(APIView):
+    #permission_classes = (IsAuthenticated,)
+
+    @ratelimit(key='ip', rate='100/m', method='POST', block=True)
+    def post(self,request,*args,**kwargs):
+        data = request.data
+        print(request.user)
+        messages = data["messages"]
+        response = chat_huggingface(messages, return_planning=False, return_results=False)
+        return JsonResponse(response)

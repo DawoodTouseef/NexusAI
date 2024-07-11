@@ -1,10 +1,10 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect,useRef } from "react";
 import { Link } from "react-router-dom"; // Import Link from react-router-dom
 import "./Main.css";
 import { assets } from "../../assets/assets";
 import { Context } from "../../context/Context";
 
-const Mane = () => {
+const Mane = ({isAuthenticated}) => {
   const {
     onSent,
     recentPrompt,
@@ -14,7 +14,7 @@ const Mane = () => {
     setInput,
     input,
   } = useContext(Context);
-  const isAuthenticated=localStorage.getItem("isAuthenticate");
+  const fileInputRef = useRef(null);
   const handleCardClick = (promptText) => {
     setInput(promptText);
   };
@@ -29,6 +29,18 @@ const Mane = () => {
       setInput('');
     }
   };
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Handle file upload here
+      onSent(file);
+    }
+  };
+
+  const handleGalleryClick = () => {
+    fileInputRef.current.click();
+  };
+
   
   return (
     <div className="main">
@@ -121,7 +133,13 @@ const Mane = () => {
               
             />
             <div>
-              <img src={assets.gallery_icon} alt="Icon" />
+              <img src={assets.gallery_icon} alt="Icon" onClick={handleGalleryClick}/>
+              <input
+                type="file"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={handleFileChange}
+              />
               <img src={assets.mic_icon} alt="Icon" />
               <img
                 src={assets.send_icon}

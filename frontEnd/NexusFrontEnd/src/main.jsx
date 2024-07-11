@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import "./index.css";
 import ContextProvider from "./context/Context.jsx";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider} from "react-router-dom";
 import FormValidationExample from "./components/auth/sign-up.jsx";
 import SignIn from "./components/auth/sign-in.jsx";
 
