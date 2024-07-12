@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-co7820qjyhw18%4$f^b_c)o1%)iy)g%d(95q#+idf==_%a9svk'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ["localhost","127.0.0.1","127.0.0.1:5000","*"]
 """Added by ngrok"""
@@ -84,10 +84,11 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=0.1),
+     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=1000),
      'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
      'ROTATE_REFRESH_TOKENS': True,
-     'BLACKLIST_AFTER_ROTATION': True
+     'BLACKLIST_AFTER_ROTATION': True,
+      'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
 ROOT_URLCONF = 'ChatBot.urls'

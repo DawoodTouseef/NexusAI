@@ -37,7 +37,6 @@ const SignIn = () => {
       localStorage.clear();
       localStorage.setItem("access_token", data.access);
       localStorage.setItem("refresh_token", data.refresh);
-      localStorage.setItem('username',username);
       localStorage.setItem("isAuthenticate",true)
       axios.defaults.headers.common[
         "Authorization"

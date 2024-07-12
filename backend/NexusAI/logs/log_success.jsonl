@@ -35,3 +35,17 @@
 {"input": "Hello", "task": [{"task": "text-classification", "id": 0, "dep": [-1], "args": {"text": "Hello"}}], "reason": "Single  tasks", "op": "text-classification"}
 {"input": "Hello", "task": [{"task": "text-classification", "id": 0, "dep": [-1], "args": {"text": "Hello"}}], "reason": "Single  tasks", "op": "text-classification"}
 {"input": "Can you write a poem about the color blue?", "task": [{"task": "text-generation", "id": 0, "dep": [-1], "args": {"text": "Can you write a poem about the color blue?"}}], "reason": "chitchat tasks", "op": "chitchat"}
+{"input": "Hello How are you?", "task": [{"task": "conversational", "id": 0, "dep": [-1], "args": {"text": "Hello How are you?"}}], "reason": "chitchat tasks", "op": "chitchat"}
+{"input": "I am fine?", "task": [{"task": "conversational", "id": 0, "dep": [-1], "args": {"text": "I am fine?"}}], "reason": "chitchat tasks", "op": "chitchat"}
+{"input": "Hello", "task": [{"task": "text-generation", "id": 0, "dep": [-1], "args": {"text": "Hello, welcome! How can I assist you today?"}}], "reason": "chitchat tasks", "op": "chitchat"}
+{"input": "Hello", "task": [{"task": "text-generation", "id": 0, "dep": [-1], "args": {"text": "Hello, welcome! How can I assist you today?"}}], "reason": "chitchat tasks", "op": "chitchat"}
+{"input": "Hello", "task": [{"task": "text-generation", "id": 0, "dep": [-1], "args": {"text": "Hello, welcome! How can I assist you today?"}}], "reason": "chitchat tasks", "op": "chitchat"}
+{"input": "Hello", "task": [{"task": "text-generation", "id": 0, "dep": [-1], "args": {"text": "Hello, welcome! How can I assist you today?"}}], "reason": "chitchat tasks", "op": "chitchat"}
+{"input": "Hello How are you?", "task": [{"task": "conversational", "id": 0, "dep": [-1], "args": {"text": "Hello How are you?"}}], "reason": "chitchat tasks", "op": "chitchat"}
+{"input": "Hello How are you?", "task": [{"task": "conversational", "id": 0, "dep": [-1], "args": {"text": "Hello How are you?"}}], "reason": "chitchat tasks", "op": "chitchat"}
+{"input": "What is your name?", "task": [{"task": "conversational", "id": 0, "dep": [-1], "args": {"text": "What is your name?"}}], "reason": "chitchat tasks", "op": "chitchat"}
+{"input": "Hello", "task": [{"task": "text-generation", "id": 0, "dep": [-1], "args": {"text": "Hello, welcome! How can I assist you today?"}}], "reason": "chitchat tasks", "op": "chitchat"}
+{"input": "Hello", "task": [{"task": "text-generation", "id": 0, "dep": [-1], "args": {"text": "Hello, welcome! How can I assist you today?"}}], "reason": "chitchat tasks", "op": "chitchat"}
+{"input": "Hello", "task": [{"task": "text-generation", "id": 0, "dep": [-1], "args": {"text": "Hello, welcome! How can I assist you today?"}}], "reason": "chitchat tasks", "op": "chitchat"}
+{"input": "Hello", "task": [{"task": "text-generation", "id": 0, "dep": [-1], "args": {"text": "Hello, welcome! How can I assist you today?"}}], "reason": "chitchat tasks", "op": "chitchat"}
+{"input": "Hello ", "task": [{"task": "text2text-generation", "id": 0, "dep": [-1], "args": {"text": "Hello"}}], "reason": "chitchat tasks", "op": "chitchat"}

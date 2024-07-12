@@ -5,6 +5,7 @@ import {
     HarmBlockThreshold,
 } from "@google/generative-ai";
 import axios from "axios";
+import axiosInstance from "../utils/axios"
 
 const url="http://127.0.0.1:5000"
 const MODEL_NAME = "gemini-1.0-pro";
@@ -62,12 +63,10 @@ export async function runlocal(prompt,file=null){
     if(file){
         messages.files=file;
     }
-    const response  = await axios.post(`${url}/chat/`, messages, {
-        headers: { "Content-Type": "application/json" },
-      });
+    const response  = await axiosInstance.post('chat/', messages);
     
     const data =await response.data;
-    return data;
+    return data.message;
     
 }
 

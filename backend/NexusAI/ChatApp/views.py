@@ -1,6 +1,6 @@
 from rest_framework.decorators import api_view
 from django.http import JsonResponse
-from backend.NexusAI.Server.awesome_chat import chat_huggingface,task_planning
+from Server.awesome_chat import *
 from django_ratelimit.decorators import ratelimit
 import os
 import binascii
@@ -11,9 +11,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
 from .models import *
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.authentication import authenticate
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.tokens import AccessToken
+
 
 @ratelimit(key='ip', rate='100/m', method='POST', block=True)
 @api_view(["POST"])
@@ -31,13 +32,6 @@ def results(request):
     response = chat_huggingface(messages, return_results=True)
     return JsonResponse(response)
 
-@ratelimit(key='ip', rate='100/m', method='POST', block=True)
-@api_view(["POST"])
-def chat(requests):
-    data=requests.data
-    messages = data["messages"]
-    response=chat_huggingface(messages,return_planning=False, return_results=False)
-    return JsonResponse(response)
 
 @api_view(['POST'])
 def new_thread(request):
@@ -59,12 +53,15 @@ def thread_info(request,id):
         thread_serializers=Threadserializers(thread,many=False)
     return JsonResponse(thread_serializers)
 
-
-class HomeView(APIView):
-    permission_classes = (IsAuthenticated,)
-    def get(self, request):
-        content = {'message': request.data.get('username')}
-        return Response(content)
+@api_view(['POST'])
+def threads(request):
+    user=User.objects.filer(pk=request.data['user'])
+    thread=Thread.objects.filter(created_by=request.user).all()
+    try:
+        thread_serializers=Threadserializers(thread,many=True)
+    except Exception as e:
+        thread_serializers=Threadserializers(thread,many=False)
+    return JsonResponse(thread_serializers)
 
 class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -83,52 +80,27 @@ class LogoutView(APIView):
 class Login(APIView):
     def post(self,request):
         username=request.data.get("username")
-        email=request.data.get('email')
-        password=request.data.get("password")
-        if email:
-            user_obj=User.objects.filter(email=email).first()
-        else:
-            user_obj=User.objects.filter(username=username).first()
-        if user_obj is None:
-            return AuthenticationFailed("User not found")
+        user=User.objects.filter(pk=username)
+        if user:
+            user=authenticate(request,user)
+            if user:
 
-
-        if not user_obj.check_password(raw_password=password):
-            raise AuthenticationFailed("Incorrect Password or Email")
-
-class ALL_CHATS(APIView):
-    permission_classes = (IsAuthenticated,)
-    def post(self,request,*args,**kwargs):
-        thread=Thread.objects.filter(title_id=request.data['id'])
-        chats=Chat.objects.filter(thread=thread)
-        if chats:
-            chat_seriallizer=ALL_Chat_serializers(chats,many=True)
-            return JsonResponse(chat_seriallizer.data,status=status.HTTP_200_OK)
-
-        else:
-            return JsonResponse({"detail":"No Chats Found"},status=status.HTTP_302_FOUND)
-
-class ValidateTokenView(APIView):
-    def post(self, request, *args, **kwargs):
-        print(request.user)
-        token = request.data.get('token')
-        if not token:
-            return Response({'error': 'Token is required'}, status=400)
-
-        try:
-            # Decode the token without verifying it
-            decoded_token = AccessToken(token)
-            return Response({'valid': True, 'token_data': decoded_token})
-        except (InvalidToken, TokenError) as e:
-            return Response({'valid': False, 'error': str(e)}, status=401)
+                user_serializers=Userserializers(user,many=True)
+                return JsonResponse(user_serializers)
 
 class Huggingpt(APIView):
-    #permission_classes = (IsAuthenticated,)
-
-    @ratelimit(key='ip', rate='100/m', method='POST', block=True)
+    permission_classes = (IsAuthenticated,)
+    #@ratelimit(key='ip', rate='100/m', method='GET', block=True)
     def post(self,request,*args,**kwargs):
         data = request.data
-        print(request.user)
         messages = data["messages"]
         response = chat_huggingface(messages, return_planning=False, return_results=False)
         return JsonResponse(response)
+
+class Threads(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self,request,*args,**kwargs):
+        thread=Thread.objects.filter(created_by=request.user)
+        thread_serializers=Threadserializers(thread,many=True)
+        return JsonResponse(thread_serializers.data,safe=False)

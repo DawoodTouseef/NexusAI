@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import *
 from rest_framework.authentication import authenticate
 
-class Threadserializers(serializers.Serializer):
+class Threadserializers(serializers.ModelSerializer):
     class Meta:
         model=Thread
         fields="__all__"
