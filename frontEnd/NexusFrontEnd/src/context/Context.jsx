@@ -3,9 +3,10 @@ import {runChat,runlocal} from "../config/gemini";
 
 export const Context = createContext();
 
+  
 const ContextProvider = (props) => {
     const [input, setInput] = useState("");
-    const [recentPrompt, setRecentPrompt] = useState("");
+    const [recentPromptFROMMAIN, setRecentPrompt] = useState("");
     const [prevPrompts, setPrevPrompts] = useState([]);
     const [prevresponse, setresponse] = useState([]);
     const [showResults, setShowResults] = useState(false);
@@ -21,7 +22,7 @@ const ContextProvider = (props) => {
         setShowResults(false)
     }
 
-    const onSent = async (prompt,file=null) => {
+    const onSentDyanamic = async (prompt,file=null) => {
         setResultData("");
         setLoading(true);
         setShowResults(true);
@@ -29,47 +30,15 @@ const ContextProvider = (props) => {
         if (file){
             formData.append('file', file);
         }
-        let response;
-        if (prompt !== undefined) {
-            response = await runChat(prompt);
-            setRecentPrompt(prompt)
-        } else {
-            setPrevPrompts(prev => [...prev, input]);
-            setRecentPrompt(input);
-            response = await runlocal(input,formData);
-            setresponse(prev =>[...prev,response]);
-        }
-        try {
-            let responseArray = response.message.split("**");
-            let newResponse = "";
-            for (let i = 0; i < responseArray.length; i++) {
-                if (i === 0 || i % 2 !== 1) {
-                    newResponse += responseArray[i];
-                } else {
-                    newResponse += "<b>" + responseArray[i] + "</b><br>";
-                }
-            }
-            let newResponse2 = newResponse.split("*").join("<br/>");
-            let newResponseArray = newResponse2.split("");
-            for (let i = 0; i < newResponseArray.length; i++) {
-                const nextWord = newResponseArray[i];
-                delayPara(i, nextWord + "");
-            }
-        } catch (error) {
-            console.error("Error while running chat:", error);
-            // Handle error appropriately
-        } finally {
-            setLoading(false);
-            setInput("");
-        }
+        setRecentPrompt(prompt);
     };
 
     const contextValue = {
         prevPrompts,
         setPrevPrompts,
-        onSent,
+        onSentDyanamic,
         setRecentPrompt,
-        recentPrompt,
+        recentPromptFROMMAIN,
         input,
         setInput,
         showResults,

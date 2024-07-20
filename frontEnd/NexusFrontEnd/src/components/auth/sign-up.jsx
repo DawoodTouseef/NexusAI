@@ -1,6 +1,10 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom"; // Import Link from React Router
 import "./Styles.css";
+import axiosInstance from "../../utils/axios";
+import axios from "axios";
+import { assets } from "../../assets/assets";
+import { getUserInfoFromToken } from "../../utils/auth";
 
 const FormValidationExample = () => {
   const [formData, setFormData] = useState({
@@ -28,7 +32,40 @@ const FormValidationExample = () => {
       });
     }
   };
-
+  const submit=async()=>{
+    // Handle form submission here
+    const profileImage=formData.profileImage;
+    const username=formData.username;
+    const email=formData.email;
+    const password=formData.password;
+    const data=axiosInstance.post("/signup/", { username: username, email: email, password: password,file:profileImage},{
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    })
+    const response=(await data).data;
+    console.log(response.message)
+        const { datas } = await axiosInstance.post(`${assets.API_URL}/token/`, {username:username,password:password}, {
+          headers: { "Content-Type": "application/json" },
+        });
+        // Initialize the access & refresh token in localStorage.
+        localStorage.clear();
+        localStorage.setItem("access_token", datas.access);
+        localStorage.setItem("refresh_token", datas.refresh);
+        localStorage.setItem("isAuthenticate",true)
+        const user_id=getUserInfoFromToken(datas.access);
+        axios.defaults.headers.common[
+          "Authorization"
+        ] = `Bearer ${data["access"]}`;
+        const user_ids =await user_id.user_id;
+        const  user_data  = await axiosInstance.get(`${url}/user/${user_ids}/`, {
+          headers: { "Content-Type": "application/json" },
+        });
+        const user_datas=await user_data.data;
+        localStorage.setItem('profile_image',user_datas.profile_image)
+        localStorage.setItem('username',user_datas.username)
+        window.location.href = "/";
+  }
   const handleSubmit = (e) => {
     e.preventDefault();
     const validationErrors = {};
@@ -71,6 +108,7 @@ const FormValidationExample = () => {
 
     if (Object.keys(validationErrors).length === 0) {
       alert("Form Submitted successfully");
+      submit(); // Uncomment this line to proceed with form submission logic (e.g., API call)
       // Proceed with form submission logic (e.g., API call)
     }
   };

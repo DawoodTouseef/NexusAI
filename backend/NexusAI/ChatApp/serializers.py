@@ -35,7 +35,34 @@ class UserLogin_serializers(serializers.Serializer):
         if user:
             return user
 
-class ALL_Chat_serializers(serializers.Serializer):
+
+class AIResponseSerializer(serializers.ModelSerializer):
     class Meta:
-        model=Chat
-        fields="__all__"
+        model = AIResponse
+        fields = ['message']
+
+class ChatSerializer(serializers.ModelSerializer):
+    responses = AIResponseSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Chat
+        fields = ['message', 'responses']
+
+class ImageSeializer(serializers.ModelSerializer):
+    class Meta:
+        model=AIImage
+        fields=["image"]
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id','username', 'email', 'bio', 'profile_image']
+
+
+class ReactChatSerializer(serializers.Serializer):
+    messages = serializers.ListField(
+        child=serializers.JSONField()
+    )
+    file = serializers.FileField(required=False)
+    threads = serializers.CharField(required=False)

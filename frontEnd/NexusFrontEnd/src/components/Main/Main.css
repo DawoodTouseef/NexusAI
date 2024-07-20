@@ -20,6 +20,9 @@
 .main-container {
   max-width: 900px;
   margin: auto;
+  overflow-y: scroll;
+  
+  
 }
 .main-container .greet {
   margin: 50px 0px;
@@ -69,6 +72,7 @@
   max-width: 900px;
   padding: 0px 20px;
   margin: auto;
+
 }
 .search-box {
   display: flex;
@@ -105,7 +109,7 @@
 .result {
   padding: 0px 5%;
   max-height: 70vh;
-  overflow-y: scroll;
+
 }
 .result::-webkit-scrollbar {
   display: none;
@@ -120,18 +124,13 @@
   width: 40px;
   border-radius: 50px;
 }
-.result-data {
-  display: flex;
-  align-items: start;
-  gap: 20px;
-}
-.loader {
+p .loader {
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
-.loader hr {
+p .loader hr {
   border-radius: 4px;
   border: none;
   background-color: #f6f7f8;
@@ -141,7 +140,7 @@
   animation: loader 4s infinite linear;
 }
 
-@keyframes loader {
+@keyframes p loader {
   0% {
     background-position: -800px 0px;
   }
@@ -150,8 +149,69 @@
   }
 }
 
-.result-data p {
-  font-size: 17px;
-  font-weight: 300px;
-  line-height: 1.8;
+.result-data {
+  font-family: 'Arial', sans-serif;
+  line-height: 1.6;
+  color: #333;
+}
+
+.result-data code {
+  background-color: #f5f5f5;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  color: #d63384;
+}
+
+.result-data pre {
+  background-color: #f5f5f5;
+  padding: 10px;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-family: 'Courier New', monospace;
+  color: #d63384;
+  border: 1px solid #ccc;
+}
+
+.result-data h1, .result-data h2, .result-data h3, .result-data h4, .result-data h5, .result-data h6 {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  font-weight: bold;
+  color: #1a0dab;
+}
+
+.result-data ul, .result-data ol {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.result-data blockquote {
+  margin: 10px 0;
+  padding-left: 10px;
+  border-left: 3px solid #ccc;
+  color: #666;
+  font-style: italic;
+}
+
+.result-data a {
+  color: #1a0dab;
+  text-decoration: none;
+}
+
+.result-data a:hover {
+  text-decoration: underline;
+}
+
+.result-data hr {
+  border: none;
+  border-top: 1px solid #ccc;
+  margin: 20px 0;
+}
+
+.result-data b {
+  font-weight: bold;
+}
+
+.result-data i {
+  font-style: italic;
 }

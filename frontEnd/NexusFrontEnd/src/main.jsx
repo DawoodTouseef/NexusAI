@@ -6,7 +6,14 @@ import ContextProvider from "./context/Context.jsx";
 import { createBrowserRouter, RouterProvider} from "react-router-dom";
 import FormValidationExample from "./components/auth/sign-up.jsx";
 import SignIn from "./components/auth/sign-in.jsx";
+import DyanamicMain  from "./components/Main/APPMAIN.jsx";
+import Sidebar from "./components/Sidebar/Sidebar.jsx";
 
+
+const Logout = () => {
+  localStorage.clear();
+  window.location.href = "/";
+};
 const router = createBrowserRouter([
   {
     path: "/",
@@ -19,6 +26,17 @@ const router = createBrowserRouter([
   {
     path: "/login",
     element: <SignIn></SignIn>,
+  },
+  {
+    path:"app/:title_id",
+    element:<>
+    <Sidebar></Sidebar>
+    <DyanamicMain></DyanamicMain>
+    </>
+  },
+  {
+    path:"/logout",
+    element:<Logout/>
   },
 ]);
 

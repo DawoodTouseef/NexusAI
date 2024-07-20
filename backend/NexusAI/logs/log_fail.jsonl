@@ -2,3 +2,99 @@
 {"input": "Hello How are you/", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
 {"input": "How are you?", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
 {"input": "How are you?", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Hello", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Explain Solar Water heating System?", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Hello", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "hkasdh", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "gdfdfgdfg", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Hello", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Hello", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Generate a image of an apple", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Hello", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Hello", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Hello", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "code  a python Program to print hello world.", "task": {"task": "text-to-code-generation", "id": 0, "dep": [-1], "args": {"code": "python print('Hello World')"}}, "reason": "task not support: text-to-code-generation", "op": "message"}
+{"input": "code a python Program to print hello world.", "task": {"task": "text-to-code-generation", "id": 0, "dep": [-1], "args": {"text": "python print('Hello World')"}}, "reason": "task not support: text-to-code-generation", "op": "message"}
+{"input": "code a python Program to print hello world.", "task": {"task": "text-to-code-generation", "id": 0, "dep": [-1], "args": {"text": "python print('Hello World')"}}, "reason": "task not support: text-to-code-generation", "op": "message"}
+{"input": "code a python Program to print hello world.", "task": {"task": "text-to-code-generation", "id": 0, "dep": [-1], "args": {"text": "Hello World"}}, "reason": "task not support: text-to-code-generation", "op": "message"}
+{"input": "code a python Program to print hello world.", "task": {"task": "text-to-code-generation", "id": 0, "dep": [-1], "args": {"text": "Hello World"}}, "reason": "task not support: text-to-code-generation", "op": "message"}
+{"input": "code a python Program to print hello world.", "task": {"task": "text-to-code-generation", "id": 0, "dep": [-1], "args": {"text": "python print('Hello World')"}}, "reason": "task not support: text-to-code-generation", "op": "message"}
+{"input": "Hello", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Hello", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Hello", "task": {"task": "text-to-text-generation", "id": 0, "dep": [-1], "args": {"text": "Hello"}}, "reason": "task not support: text-to-text-generation", "op": "message"}
+{"input": "Hello", "task": {"task": "text-to-text-generation", "id": 0, "dep": [-1], "args": {"text": "Hello"}}, "reason": "task not support: text-to-text-generation", "op": "message"}
+{"input": "Hello", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Hello", "task": {"task": "text-to-text-generation", "id": 0, "dep": [-1], "args": {"text": "Hello"}}, "reason": "task not support: text-to-text-generation", "op": "message"}
+{"input": "Hello", "task": {"task": "text-to-text-generation", "id": 0, "dep": [-1], "args": {"text": "Hello"}}, "reason": "task not support: text-to-text-generation", "op": "message"}
+{"input": "Hello", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Explain this Image Na icon.png", "task": {"task": "image-processing", "id": 0, "dep": [-1], "args": {"image": "public/Na icon.png"}}, "reason": "task not support: image-processing", "op": "message"}
+{"input": "Explain it ", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Hello How are you?", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "I am fine?", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "My Name is Tony Stark.", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "what is my name?", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "what is my name?", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Na icon.png", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Explain the image Na icon.png and what is the use of it", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Explain it Na icon.png", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Hello How are you?", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Hello", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Hello", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Summary ofApple Inc. Stock Market of Today.", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Generate a Logo of NexusAI.", "task": {"task": "canny-control", "id": 0, "dep": [-1], "args": {"text": "NexusAI", "image": "public/<GENERATED>-0"}}, "reason": "task not support: canny-control", "op": "message"}
+{"input": "Generate a Logo of NexusAI.", "task": {"task": "canny-control", "id": 0, "dep": [-1], "args": {"text": "NexusAI", "image": "public/<GENERATED>-0"}}, "reason": "task not support: canny-control", "op": "message"}
+{"input": "url:https://python.langchain.com/v0.1/docs/modules/agents/agent_types/", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Give Summary of todays  Apple INC. Stock Market", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Give Summary of todays Apple INC. Stock Market", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Give Summary of todays Apple INC. Stock Market", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Give Summary of todays Apple INC. Stock Market", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "AAPL", "task": {"task": "openpose-control", "id": 0, "dep": [-1], "args": {"image": "public//example.jpg"}}, "reason": "task not support: openpose-control", "op": "message"}
+{"input": "AAPL", "task": {"task": "openpose-control", "id": 0, "dep": [-1], "args": {"image": "public//example.jpg"}}, "reason": "task not support: openpose-control", "op": "message"}
+{"input": "Give Summary of todays Apple INC. Stock Market", "task": {"task": "get_current_stock_market_data", "id": 0, "dep": [-1], "args": {"company_name": "Apple Inc.", "stock_symbol": "AAPL", "date": "today"}}, "reason": "task not support: get_current_stock_market_data", "op": "message"}
+{"input": "Give Summary of todays Apple INC. Stock Market", "task": {"task": "get_current_stock_market_data", "id": 0, "dep": [-1], "args": {"company_name": "Apple Inc.", "stock_symbol": "AAPL", "date": "today"}}, "reason": "task not support: get_current_stock_market_data", "op": "message"}
+{"input": "Give Summary of todays Apple INC. Stock Market", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Give Summary of todays Apple INC. Stock Market", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Give Summary of todays Apple INC. Stock Market", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Give Summary of todays Apple INC. Stock Market", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Give Summary of todays Apple INC. Stock Market", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "current Stock Price of Google.", "task": {"task": "stock-market", "id": 0, "dep": [-1], "args": {"stock_symbol": "AAPL", "rest_api_key": "<GENERATED>"}}, "reason": "task not support: stock-market", "op": "message"}
+{"input": "current Stock Price of Google.", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "What is the weather in Mangalore?", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "What is the weather in Mangalore?", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Explain the image ./gemini_icon.png", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Given a collection of image A:  ./gemini_icon.png Can you Explain the image ", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Explain about quantum Physics in 5000 words.", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "what is my name?", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Okay.", "task": {"task": "text-to-video", "id": 11, "dep": [-1], "args": {"text": "a boy is running"}}, "reason": "no available models: text-to-video", "op": "message"}
+{"input": "Can you say me what I have asked prevouisly.", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "top 10 news of today in karnataka.", "task": {"task": "information-retrieval", "id": 0, "dep": [-1], "args": {"query": "top 10 news of today in Karnataka"}}, "reason": "task not support: information-retrieval", "op": "message"}
+{"input": "Show me the Url", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Are you a Human?", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Can you give me some ideas to improve yourself", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "zsh: command not found: python", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "What is stack overflow?", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Hello", "task": {"task": "text-to-video", "id": 12, "dep": [-1], "args": {"text": "a boy is running"}}, "reason": "no available models: text-to-video", "op": "message"}
+{"input": "Hello", "task": {"task": "openpose-control", "id": 0, "dep": [-1], "args": {"image": "public//e.jpg"}}, "reason": "task not support: openpose-control", "op": "message"}
+{"input": "Hello How are you?", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "is it a good option to buy zomato stock now Gemini Icon", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "s it a good option to buy zomato stock now", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "IS it a good option to buy zomato stock now?", "task": {"task": "image-processing", "id": 4, "dep": [-1], "args": {"image": "public/Na icon.png"}}, "reason": "task not support: image-processing", "op": "message"}
+{"input": "IS it a good option to buy zomato stock now?", "task": {"task": "text-to-video", "id": 2, "dep": [-1], "args": {"text": "a boy is running"}}, "reason": "no available models: text-to-video", "op": "message"}
+{"input": "Hello", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Who is Nishanth from Canara Engineering College?", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "who is the g overner", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Who is the governor of Karnataka", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Who is the governor of Karnataka", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Who is the Current chief minister of KArnataka?", "task": {"task": "natural-language-processing", "id": 2, "dep": [-1], "args": {"text": "<GENERATED TEXT>"}}, "reason": "task not support: natural-language-processing", "op": "message"}
+{"input": "How are you?", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "How are you?", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Hello How are you?", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Hello How are you?", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Hello How are you?can you tell  me about Tony Stark", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "had your lunch?", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Hello How are you?What is the weather In Mangalore?", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Hello How are you?What is the weather In Mangalore?", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}
+{"input": "Find me a top 10 tranding Movie in youtube.", "task": {"task": "text-to-video", "id": 0, "dep": [-1], "args": {"text": "Find me a top 10 trending movie in youtube"}}, "reason": "no available models: text-to-video", "op": "message"}
+{"input": "Top 10 youtube videos", "task": {"task": "text-to-video", "id": 0, "dep": [-1], "args": {"text": "Top 10 youtube videos"}}, "reason": "no available models: text-to-video", "op": "message"}
+{"input": "Top 10 youtube Movies", "task": [], "reason": "task parsing fail: empty", "op": "chitchat"}

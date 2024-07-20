@@ -1,11 +1,7 @@
-from huggingface_hub import InferenceClient
-from ollama_python.endpoints.generate import GenerateAPI
-from dotenv import load_dotenv
 import base64
 import copy
 from io import BytesIO
 import io
-import os
 import random
 import time
 import traceback
@@ -23,13 +19,25 @@ from Server.get_token_ids import get_token_ids_for_task_parsing, get_token_ids_f
 from huggingface_hub import InferenceApi
 from queue import Queue
 from pathlib import Path
-
+from ChatApp.models import *
+from django.core.files.base import ContentFile
+from dotenv import load_dotenv
+from ollama_python.endpoints.generate import GenerateAPI
+from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
+from langchain import hub
+import os
+from huggingface_hub import InferenceClient
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 path=os.path.join(BASE_DIR,"Server")
 
 load_dotenv()
+ALL_TASKS=[
+"token-classification","translation", "question-answering", "sentence-similarity", "tabular-classification", "object-detection", "image-classification", "image-to-image", "image-to-text", "text-to-image", "text-to-video", "visual-question-answering", "document-question-answering", "image-segmentation", "depth-estimation", "text-to-speech", "automatic-speech-recognition", "audio-to-audio", "audio-classification", "canny-control", "hed-control", "mlsd-control", "normal-control", "openpose-control", "canny-text-to-image", "depth-text-to-image", "hed-text-to-image", "mlsd-text-to-image", "normal-text-to-image", "openpose-text-to-image", "seg-text-to-image","text-to-code-generation"
+
+]
+
 config_file=os.path.join(path,"configs","config.yaml")
 config = yaml.load(open(config_file, "r"), Loader=yaml.FullLoader)
 os.makedirs("logs", exist_ok=True)
@@ -77,7 +85,7 @@ if inference_mode!="huggingface":
 task_parsing_highlight_ids = get_token_ids_for_task_parsing(LLM_encoding)
 choose_model_highlight_ids = get_token_ids_for_choose_model(LLM_encoding)
 
-MODELS = [json.loads(line) for line in open(os.path.join(path,"data","p0_models.jsonl"), "r").readlines()]
+MODELS = [json.loads(line) for line in open(os.path.join(path,"data","p1_models.jsonl"), "r").readlines()]
 MODELS_MAP = {}
 for model in MODELS:
     tag = model["task"]
@@ -140,7 +148,24 @@ def convert_chat_to_completion(data):
     data['stop'] = data.get('stop', ["<im_end>"])
     data['max_tokens'] = data.get('max_tokens', max(get_max_context_length(LLM) - count_tokens(LLM_encoding, final_prompt), 1))
     return data
-
+def chat_llama(prompt,max_tokens,stop):
+    client = InferenceClient(
+        "meta-llama/Meta-Llama-3-8B-Instruct",
+        token=os.getenv("LLAMA_TOKEN"),
+    )
+    response = ""
+    for message in client.chat_completion(
+            messages=prompt,
+            max_tokens=max_tokens,
+            stop=stop,
+            stream=True,
+    ):
+        try:
+            response += message.choices[0].delta.content
+        except TypeError as e:
+            pass
+    logger.debug(response)
+    return response
 
 def send_request(data):
     data = convert_chat_to_completion(data)
@@ -160,7 +185,10 @@ def send_request(data):
             stop=stop,
             stream=True,
     ):
-        response += message.choices[0].delta.content
+        try:
+            response += message.choices[0].delta.content
+        except TypeError as e:
+            pass
     logger.debug(response)
     return response
 
@@ -257,13 +285,6 @@ def unfold(tasks):
 
     return tasks
 
-
-def chitchat(messages):
-    data = {
-        "messages": messages,
-    }
-    return send_request(data)
-
 def parse_task(context, input):
     demos_or_presteps = parse_task_demos_or_presteps
     messages = json.loads(demos_or_presteps)
@@ -347,16 +368,20 @@ def collect_result(command,choose, inference_result):
     return result
 
 
-def huggingface_model_inference(model_id, data, task,path=None):
+def huggingface_model_inference(model_id, data, task,path=None,chat=None):
     result = {}
     task_url = f"https://api-inference.huggingface.co/models/{model_id}"
     inference = InferenceApi(repo_id=model_id, token=os.getenv("LLAMA_TOKEN"))
     # NLP tasks
-    #if task == "question-answering":
     #    task_url = f"https://api-inference.huggingface.co/models/{model_id}"  # InferenceApi does not yet support some tasks
     #    inference = InferenceApi(repo_id=model_id, token=os.getenv("LLAMA_TOKEN"))
     #    inputs = {"question": data["text"], "context": (data["context"] if "context" in data else "")}
     #    result = inference(inputs)
+    if task=="text-to-code-generation":
+        model_id="deepseek-ai/deepseek-coder-33b-instruct"
+        task_url = f"https://api-inference.huggingface.co/models/{model_id}"  # InferenceApi does not yet support some tasks
+        inference = InferenceApi(repo_id=model_id, token=os.getenv("LLAMA_TOKEN"))
+        result=inference(inputs={"inputs":data['text']})
     if task == "sentence-similarity":
         inputs = {"source_sentence": data["text1"], "target_sentence": data["text2"]}
         model_id='sentence-transformers/all-MiniLM-L6-v2'
@@ -390,7 +415,8 @@ def huggingface_model_inference(model_id, data, task,path=None):
 
     if task == "image-to-image":
          # InferenceApi does not yet support some tasks
-        img_url = data["image"]
+        image_path=os.path.join(BASE_DIR,"Server")
+        img_url = os.path.join(image_path,"public","example",data["image"])
         img_data = image_to_bytes(img_url)
         # result = inference(data=img_data) # not support
         HUGGINGFACE_HEADERS["Content-Length"] = str(len(img_data))
@@ -399,16 +425,40 @@ def huggingface_model_inference(model_id, data, task,path=None):
         if "path" in result:
             result["generated image"] = result.pop("path")
             path['path']=result.pop('path')
-    if task == "text-to-image":
+    if task == "text-to-image" or task=="image-generation":
         inputs = data["text"]
-        img = inference(inputs)
+        prompt = hub.pull("hardkothari/prompt-maker")
+        llm = HuggingFaceEndpoint(huggingfacehub_api_token=os.getenv("LLAMA_TOKEN"), model_kwargs={
+                           "max_tokens":2048,
+       "add_to_git_credential":True
+   },
+                                  repo_id="mistralai/Mixtral-8x7B-Instruct-v0.1")
+        runnable = prompt | llm
+        inputs=runnable.invoke(
+            {
+                "lazy_prompt": inputs,
+                "task": task,
+
+            }
+
+        )
+        img = inference(inputs)  # Assuming inference() returns a PIL Image object
         name = str(uuid.uuid4())[:4]
-        img.save(f"public/images/{name}.png")
-        result["generated image"] = f"Path of the Image='/images/{name}.png'"
-        path['path']=f'/images/{name}.png'
+
+        if isinstance(img, Image.Image):
+            image_bytes = BytesIO()
+            img.save(image_bytes, format='PNG')  # Save PIL Image to BytesIO
+
+            # Create AIImage instance and save to database
+            ai_image = AIImage(chat=chat)
+            ai_image.image.save(f"{name}.png", ContentFile(image_bytes.getvalue()), save=True)
+            result["generated_image"] = f"Path of the Image='/images/{name}.png'"
+            path['path'] = f'/images/{name}.png'
+
 
     if task == "image-segmentation":
-        img_url = data["image"]
+        image_path = os.path.join(BASE_DIR, "Server")
+        img_url = os.path.join(image_path, "public", "example", data["image"])
         img_data = image_to_bytes(img_url)
         image = Image.open(BytesIO(img_data))
         predicted = inference(data=img_data)
@@ -425,13 +475,21 @@ def huggingface_model_inference(model_id, data, task,path=None):
             layer = Image.new('RGBA', mask.size, colors[i])
             image.paste(layer, (0, 0), mask)
         name = str(uuid.uuid4())[:4]
-        image.save(f"public/images/{name}.jpg")
-        result["generated image"] = f"Path of the Image='/images/{name}.jpg'"
-        path["path"] = f"/images/{name}.jpg"
+        if isinstance(image,Image.Image):
+            image.save(f"public/images/{name}.jpg")
+            result["generated image"] = f"Path of the Image='/images/{name}.jpg'"
+            path["path"] = f"/images/{name}.jpg"
+            image_bytes = BytesIO()
+            type = path['path'].split(".")[-1]
+            image.save(f"public/images/{name}.jpg")
+            image_bytes = image_bytes.getvalue()
+            image = AIImage(chat=chat, image=image_bytes)
+            image.save()
         result["predicted"] = predicted
 
     if task == "object-detection":
-        img_url = data["image"]
+        image_path = os.path.join(BASE_DIR, "Server")
+        img_url = os.path.join(image_path, "public", "example", data["image"])
         img_data = image_to_bytes(img_url)
         predicted = inference(data=img_data)
         image = Image.open(BytesIO(img_data))
@@ -450,15 +508,24 @@ def huggingface_model_inference(model_id, data, task,path=None):
         image.save(f"public/images/{name}.jpg")
         result["generated image"] =f"Path of the Image='/images/{name}.jpg'"
         result["path"] = f"/images/{name}.jpg"
+        image = Image.open(os.path.join("/home/lenovo/NexusAI/backend/NexusAI/public", path['path']))
+        image_bytes = BytesIO()
+        type = path['path'].split(".")[-1]
+        image.save(image_bytes, format=type.upper())
+        image_bytes = image_bytes.getvalue()
+        image = AIImage(chat=chat, image=image_bytes)
+        image.save()
         result["predicted"] = predicted
 
     if task in ["image-classification"]:
-        img_url = data["image"]
+        image_path = os.path.join(BASE_DIR, "Server")
+        img_url = os.path.join(image_path, "public", "example", data["image"])
         img_data = image_to_bytes(img_url)
         result = inference(data=img_data)
 
     if task == "image-to-text":
-        img_url = data["image"]
+        image_path = os.path.join(BASE_DIR, "Server")
+        img_url = os.path.join(image_path, "public", "example", data["image"])
         img_data = image_to_bytes(img_url)
         HUGGINGFACE_HEADERS["Content-Length"] = str(len(img_data))
         r = requests.post(task_url, headers=HUGGINGFACE_HEADERS, data=img_data, proxies=PROXY)
@@ -496,6 +563,7 @@ def huggingface_model_inference(model_id, data, task,path=None):
             audio.export(f"public/audios/{name}.{type}", format=type)
             result["generated audio"] =f"Path of the Audio='/audios/{name}.{type}'"
             path["path"] = f"/audios/{name}.{type}"
+
     return result,path
 
 def get_model_status(model_id, url, headers, queue = None):
@@ -565,7 +633,7 @@ def get_avaliable_models(candidates, topk=5):
 
     return all_available_models
 
-def run_task(input, command, results,path=None):
+def run_task(input, command, results,path=None,chat=None):
     id = command["id"]
     args = command["args"]
     task = command["task"]
@@ -644,27 +712,18 @@ def run_task(input, command, results,path=None):
 
     command["args"] = args
     logger.debug(f"parsed task: {command}")
-
-    if task in ["summarization", "translation", "conversational", "text-generation",
-                "text2text-generation"]:  # ChatGPT Can do
-        best_model_id = "LLAMA3-8B"
-        reason = "LLAMA3-8B performs well on some NLP tasks as well."
-        choose = {"id": best_model_id, "reason": reason}
-        messages = [{
-            "role": "user",
-            "content": f"[ {input} ] contains a task in JSON format {command}. Now you are a {command['task']} system, the arguments are {command['args']}. Just help me do {command['task']} and give me the result. The result must be in text form without any urls."
-        }]
-        response = chitchat(messages)
-        results[id] = collect_result(command, choose, {"response": response})
-        return True
-    else:
+    if task in ALL_TASKS:
         if task not in MODELS_MAP:
             logger.warning(f"no available models on {task} task.")
             record_case(success=False,
                         **{"input": input, "task": command, "reason": f"task not support: {command['task']}",
                            "op": "message"})
             inference_result = {"error": f"{command['task']} not found in available tasks."}
-            results[id] = collect_result(command, "", inference_result)
+            print("Real-time Information")
+            from Server.Agents import agent
+            inference_result = agent(args)
+            choose = {"id": -1, "reason": "It's a realtime information"}
+            results[id] = collect_result(command, choose, inference_result)
             return False
 
         candidates = MODELS_MAP[task][:10]
@@ -679,7 +738,11 @@ def run_task(input, command, results,path=None):
                            "op": "message"})
             inference_result = {"error": f"no available models on {command['task']} task."}
             #inference_result=model_api.generate(prompt=f"{inference_result['error']}").response
-            results[id] = collect_result(command, "", inference_result)
+            print("Real-time Information")
+            from Server.Agents import agent
+            inference_result = agent(args)
+            choose = {"id": -1, "reason": "It's a realtime information"}
+            results[id] = collect_result(command, choose, inference_result)
             return False
 
         if len(all_avaliable_model_ids) == 1:
@@ -709,6 +772,7 @@ def run_task(input, command, results,path=None):
                 choose = json.loads(choose_str)
                 best_model_id = choose["id"]
             except Exception as e:
+                choose_str = choose_model(input, command, cand_models_info)
                 choose=extract_json_from_string(choose_str)
                 best_model_id = choose[0]["id"]
                 if choose==[]:
@@ -716,18 +780,28 @@ def run_task(input, command, results,path=None):
                         f"the response [ {choose_str} ] is not a valid JSON, try to find the model id and reason in the response.")
                     choose_str = find_json(choose_str)
                     best_model_id, reason, choose = get_id_reason(choose_str)
-        inference_result ,path= huggingface_model_inference(best_model_id, args, command['task'],path=path)
+        inference_result ,path= huggingface_model_inference(best_model_id, args, command['task'],path=path,chat=chat)
         if "error" in inference_result:
             logger.warning(f"Inference error: {inference_result['error']}")
             record_case(success=False,
                         **{"input": input, "task": command, "reason": f"inference error: {inference_result['error']}",
                            "op": "message"})
+            print("Real-time Information")
+            from Server.Agents import agent
+            inference_result = agent(args)
+            choose = {"id": -1, "reason": "It's a realtime information"}
             results[id] = collect_result(command, choose, inference_result)
             return False
 
         results[id] = collect_result(command, choose, inference_result)
         return True
-
+    else:
+        print("Real-time Information")
+        from Server.Agents import agent
+        inference_result=agent(args)
+        choose = {"id": -1, "reason": "It's a realtime information"}
+        results[id] = collect_result(command, choose, inference_result)
+        return True
 
 def extract_lists(input_str):
     # Regular expression to find JSON-like lists within the string
@@ -749,7 +823,7 @@ def extract_lists(input_str):
 
     return result
 
-def chat_huggingface(messages, return_planning = False, return_results = False):
+def chat_huggingface(messages, return_planning = False, return_results = False,chat=None):
     start = time.time()
     context = messages[:-1]
     inputs = messages[-1]["content"]
@@ -764,73 +838,96 @@ def chat_huggingface(messages, return_planning = False, return_results = False):
     if tasks == []:  # using LLM response for empty task
         record_case(success=False,
                     **{"input": inputs, "task": [], "reason": "task parsing fail: empty", "op": "chitchat"})
-        response = chitchat(messages)
-        return {"message": response}
+        paths = {}
+        from Server.Agents import agent
+        print("using an Agent.")
+        results = agent(inputs)
+        response = response_results(inputs, results).strip()
+        return {'message': response, "path": paths}
 
     if len(tasks) == 1 and tasks[0]["task"] in ["summarization", "conversational", "text-generation",
                                                 "text2text-generation"]:
         record_case(success=True, **{"input": inputs, "task": tasks, "reason": "chitchat tasks", "op": "chitchat"})
-        response = chitchat(messages)
-        return {"message": response}
+        paths={}
+        from Server.Agents import agent
+        print("using an Agent.")
+        results = agent(inputs)
+        response = response_results(inputs, results).strip()
+        return {'message': response, "path": paths}
     if len(tasks)==1:
         record_case(success=True, **{"input": inputs, "task": tasks, "reason": "Single  tasks", "op": tasks[0]['task']})
         d=dict()
-        path=dict
-        done=run_task(inputs,tasks[0],d,path)
+        path=dict()
+        done=run_task(inputs,tasks[0],d,path,chat)
         if done:
             results=d.copy()
             paths=path.copy()
             response=response_results(inputs,results).strip()
             return {'message':response,"path":paths}
-    tasks = unfold(tasks)
-    tasks = fix_dep(tasks)
-    logger.debug(tasks)
+    try:
+        tasks = unfold(tasks)
+        tasks = fix_dep(tasks)
+        logger.debug(tasks)
 
-    if return_planning:
-        return tasks
+        if return_planning:
+            return tasks
 
-    results = {}
-    threads = []
-    tasks = tasks[:]
-    d = dict()
-    retry = 0
-    while True:
-        num_thread = len(threads)
-        for task in tasks:
-            # logger.debug(f"d.keys(): {d.keys()}, dep: {dep}")
-            for dep_id in task["dep"]:
-                if dep_id >= task["id"]:
-                    task["dep"] = [-1]
-                    break
-            dep = task["dep"]
-            if dep[0] == -1 or len(list(set(dep).intersection(d.keys()))) == len(dep):
-                tasks.remove(task)
-                thread = threading.Thread(target=run_task, args=(inputs, task, d))
-                thread.start()
-                threads.append(thread)
-        if num_thread == len(threads):
-            time.sleep(0.5)
-            retry += 1
-        if retry > 160:
-            logger.debug("User has waited too long, Loop break.")
-            break
-        if len(tasks) == 0:
-            break
-        for thread in threads:
-            thread.join()
+        results = {}
+        threads = []
+        tasks = tasks[:]
+        d = dict()
+        retry = 0
+        while True:
+            num_thread = len(threads)
+            for task in tasks:
+                # logger.debug(f"d.keys(): {d.keys()}, dep: {dep}")
+                for dep_id in task["dep"]:
+                    if dep_id >= task["id"]:
+                        task["dep"] = [-1]
+                        break
+                dep = task["dep"]
+                if dep[0] == -1 or len(list(set(dep).intersection(d.keys()))) == len(dep):
+                    tasks.remove(task)
+                    thread = threading.Thread(target=run_task, args=(inputs, task, d,chat))
+                    thread.start()
+                    threads.append(thread)
+            if num_thread == len(threads):
+                time.sleep(0.5)
+                retry += 1
+            if retry > 160:
+                logger.debug("User has waited too long, Loop break.")
+                break
+            if len(tasks) == 0:
+                break
+            for thread in threads:
+                thread.join()
 
-        results = d.copy()
-        logger.debug(results)
-        if return_results:
-            return results
-        response = response_results(inputs, results).strip()
+            results = d.copy()
+            logger.debug(results)
+            if return_results:
+                return results
+            response = response_results(inputs, results).strip()
 
+            end = time.time()
+            during = end - start
+
+            answer = {"message": response}
+            record_case(success=True,
+                        **{"input": inputs, "task": task_str, "results": results, "response": response, "during": during,
+                           "op": "response"})
+            logger.info(f"response: {response}")
+            return answer
+    except Exception as e:
+        print("Real-time Information")
+        from Server.Agents import agent
+        start = time.time()
+        inference_result = agent(inputs)
+        response = response_results(inputs, inference_result).strip()
         end = time.time()
         during = end - start
-
         answer = {"message": response}
         record_case(success=True,
-                    **{"input": inputs, "task": task_str, "results": results, "response": response, "during": during,
+                    **{"input": inputs, "task": task_str, "results": response, "response": response, "during": during,
                        "op": "response"})
         logger.info(f"response: {response}")
         return answer
@@ -886,6 +983,8 @@ def results(tasks):
         logger.debug(results)
         return results
 
+
+
 def cli():
     messages = []
     print("Welcome to Jarvis! A collaborative system that consists of an LLM as the controller and numerous expert models as collaborative executors. Jarvis can plan tasks, schedule Hugging Face models, generate friendly responses based on your requests, and help you with many things. Please enter your request (`exit` to exit).")
@@ -900,5 +999,3 @@ def cli():
         messages.append({"role": "assistant", "content": answer["message"]})
 
 
-if __name__=="__main__":
-    cli()

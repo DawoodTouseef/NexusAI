@@ -14,12 +14,12 @@ def get_model(repo_id,MODEL,local_dir="hf_cache"):
                 content = file.read()
                 modelss.update({"description": content})
             MODEL.append(modelss)
-            with open("/home/lenovo/NexusAI/Server/data/p1_models.jsonl","w") as f:
+            with open("/home/lenovo/NexusAI/backend/NexusAI/Server/data/p1_models.jsonl","w") as f:
                 for i in MODEL:
                     json_lines=json.dumps(i)
                     f.write(json_lines + '\n')
             print("Done")
 
 if __name__=="__main__":
-    MODELS = [json.loads(line) for line in open("/home/lenovo/NexusAI/Server/data/p0_models.jsonl", "r").readlines()]
-    get_model("microsoft/Florence-2-base",MODELS)
+    MODELS = [json.loads(line) for line in open("/home/lenovo/NexusAI/backend/NexusAI/Server/data/p0_models.jsonl", "r").readlines()]
+    get_model("microsoft/Phi-3-mini-4k-instruct",MODELS)

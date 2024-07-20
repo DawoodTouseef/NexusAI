@@ -2,9 +2,10 @@ import React, { useState ,useContext} from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import "./sign-in.css";
-import envCompatible from "vite-plugin-env-compatible";
+import { getUserInfoFromToken } from "../../utils/auth";
 import { assets  } from "../../assets/assets";
 import { Context } from "../../context/Context";
+import axiosInstance from "../../utils/axios";
 
 
 // Access the environment variable
@@ -41,7 +42,16 @@ const SignIn = () => {
       axios.defaults.headers.common[
         "Authorization"
       ] = `Bearer ${data["access"]}`;
+      const user_id=await getUserInfoFromToken(data.access);
+      const user_ids =await user_id.user_id;
+      const  user_data  = await axiosInstance.get(`${url}/user/${user_ids}/`, {
+        headers: { "Content-Type": "application/json" },
+      });
+      const user_datas=await user_data.data;
+      localStorage.setItem('profile_image',user_datas.profile_image)
+      localStorage.setItem('username',user_datas.username)
       window.location.href = "/";
+      
     } catch (error) {
       // Handle errors here
       console.error("There was an error logging in:", error);

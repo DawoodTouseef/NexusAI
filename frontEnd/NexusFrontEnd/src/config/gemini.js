@@ -1,13 +1,11 @@
-
 import {
     GoogleGenerativeAI,
     HarmCategory,
     HarmBlockThreshold,
 } from "@google/generative-ai";
-import axios from "axios";
 import axiosInstance from "../utils/axios"
 
-const url="http://127.0.0.1:5000"
+
 const MODEL_NAME = "gemini-1.0-pro";
 const API_KEY = "AIzaSyAGdEZLRMpGx1VLy-iK4kKDUApSa5z_YZQ";
 
@@ -53,20 +51,33 @@ export async function runChat(prompt) {
     console.log(response.text());
     return response.text();
 }
-export async function runlocal(prompt,file=null){
-    const messages={
-        "messages":[{
-            "role":"user",
-            "content":prompt
-        }],
-    }
-    if(file){
-        messages.files=file;
-    }
-    const response  = await axiosInstance.post('chat/', messages);
+export async function runlocal(prompt,file=null,thread=null){
+    const formdata=new FormData();
     
-    const data =await response.data;
-    return data.message;
+    formdata.append("messages",JSON.stringify([{
+        "role":"user",
+        "content":prompt
+    }]))
+    if(file){
+        formdata.append("file",file)
+    }
+    if(thread){
+        formdata.append("threads",thread)
+    }
+    try {
+        const response  = await axiosInstance.post('chat/', formdata,{
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+
+        const data =await response.data;
+        return data.message,data.path;
+    }catch (error){
+        let e;
+        e="Sorry please try again"
+        return e,"";
+    }
     
 }
 

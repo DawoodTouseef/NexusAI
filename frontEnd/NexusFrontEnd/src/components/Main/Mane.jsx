@@ -1,20 +1,22 @@
-import React, { useContext, useEffect,useRef } from "react";
-import { Link } from "react-router-dom"; // Import Link from react-router-dom
+import React, { useContext, useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "./Main.css";
 import { assets } from "../../assets/assets";
 import { Context } from "../../context/Context";
+import axiosInstance from "../../utils/axios";
 
-const Mane = ({isAuthenticated}) => {
+const Mane = ({ isAuthenticated }) => {
   const {
-    onSent,
-    recentPrompt,
     showResults,
-    loading,
-    resultData,
     setInput,
+    setRecentPrompt,
     input,
   } = useContext(Context);
+  const [title_id, setTitleId] = useState("");
+  const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const [file, setFile] = useState(null);
+
   const handleCardClick = (promptText) => {
     setInput(promptText);
   };
@@ -23,17 +25,16 @@ const Mane = ({isAuthenticated}) => {
     setInput(e.target.value);
   };
 
-  const handleInputKeyPress = (e) => {
+  const handleInputKeyPress = async (e) => {
     if (e.key === "Enter") {
-      onSent();
-      setInput('');
+      await sendInput();
     }
   };
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Handle file upload here
-      onSent(file);
+      setFile(file);
     }
   };
 
@@ -41,15 +42,44 @@ const Mane = ({isAuthenticated}) => {
     fileInputRef.current.click();
   };
 
-  
+  const sendInput = async () => {
+    try {
+      const formData = new FormData();
+      formData.append("title", input);
+      setRecentPrompt(input)
+
+      const response = await axiosInstance.post("/new_thread/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      const title_id = response.data.title_id;
+      setTitleId(title_id);
+      navigate(`app/${title_id}`);
+      setInput('');
+      setFile(null);
+    } catch (error) {
+      console.error("Error creating new thread:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (title_id) {
+      navigate(`app/${title_id}`);
+    }
+  }, [title_id, navigate]);
+
   return (
     <div className="main">
       <div className="nav">
         <p>NexusAI</p>
         {isAuthenticated ? (
-          <img src={assets.user_icon} alt="User Avatar" />
+          <>
+          <img src={`${assets.API_URL}/serve${localStorage.getItem('profile_image')}/`} alt="User Avatar" />
+        </>
         ) : (
-          <Link to="/login">Sign In</Link> // Use Link component to navigate to /login
+          <Link to="/login">Sign In</Link>
         )}
       </div>
       <div className="main-container">
@@ -101,26 +131,7 @@ const Mane = ({isAuthenticated}) => {
               </div>
             </div>
           </>
-        ) : (
-          <div className="result">
-            <div className="result-title">
-              <img src={assets.user_icon} alt="User Avatar" />
-              <p>{recentPrompt}</p>
-            </div>
-            <div className="result-data">
-              <img src={assets.gemini_icon} alt="Gemini Icon" />
-              {loading ? (
-                <div className="loader">
-                  <hr />
-                  <hr />
-                  <hr />
-                </div>
-              ) : (
-                <p dangerouslySetInnerHTML={{ __html: resultData }}></p>
-              )}
-            </div>
-          </div>
-        )}
+        ) : null}
 
         <div className="main-bottom">
           <div className="search-box">
@@ -130,10 +141,9 @@ const Mane = ({isAuthenticated}) => {
               value={input}
               type="text"
               placeholder="Enter the Prompt Here"
-              
             />
             <div>
-              <img src={assets.gallery_icon} alt="Icon" onClick={handleGalleryClick}/>
+              <img src={assets.gallery_icon} alt="Icon" onClick={handleGalleryClick} />
               <input
                 type="file"
                 ref={fileInputRef}
@@ -144,10 +154,7 @@ const Mane = ({isAuthenticated}) => {
               <img
                 src={assets.send_icon}
                 alt="Icon"
-                onClick={() => {
-                  onSent();
-                  setInput('')
-                }}
+                onClick={sendInput}
               />
             </div>
           </div>
@@ -157,14 +164,8 @@ const Mane = ({isAuthenticated}) => {
               double-check its responses. Your privacy & NexusAI Co.
             </p>
           </div>
-          {/* {!isAuthenticated && ( // Show the button only if not authenticated
-            <div className="sign-in-button">
-              <Link to="/login">Already have an account? Sign In</Link>
-            </div>
-          )} */}
         </div>
       </div>
-     
     </div>
   );
 };

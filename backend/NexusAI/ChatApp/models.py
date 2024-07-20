@@ -30,8 +30,11 @@ class Chat(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f'Chat by {self.sender.username} in {self.thread.title}'
+        return self.thread.title
 
+class UserFile(models.Model):
+    user=models.ForeignKey(User,related_name="uploaded_file",on_delete=models.CASCADE)
+    file = models.FileField(upload_to='public/examples', blank=True, null=True)
 class AIResponse(models.Model):
     chat = models.ForeignKey(Chat, related_name='responses', on_delete=models.CASCADE)
     message = models.TextField()
@@ -41,13 +44,13 @@ class AIResponse(models.Model):
     def __str__(self):
         return f'Response for chat {self.chat.id}'
 
-class Image(models.Model):
-    chat = models.ForeignKey(Chat, related_name='images', on_delete=models.CASCADE)
-    image = models.ImageField(upload_to='chat_images/')
+class AIImage(models.Model):
+    chat = models.ForeignKey(Chat, related_name='images', on_delete=models.CASCADE,null=True)
+    image = models.ImageField(upload_to='chat_images/',)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'Image for chat {self.chat.id}'
+        return f'Image for chat {self.chat.message}'
 
 class Audio(models.Model):
     chat = models.ForeignKey(Chat, related_name='audios', on_delete=models.CASCADE)
