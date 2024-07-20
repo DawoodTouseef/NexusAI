@@ -16,7 +16,6 @@ import json
 from typing import Optional
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_huggingface.chat_models.huggingface import HuggingFaceEndpoint,ChatHuggingFace
-from langchain_community.tools import ClickTool
 
 
 class YouTubeSearchTool:
