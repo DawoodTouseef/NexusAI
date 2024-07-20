@@ -18,6 +18,15 @@ from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_huggingface.chat_models.huggingface import HuggingFaceEndpoint,ChatHuggingFace
 
 
+
+load_dotenv()
+
+Huggingface = HuggingFaceEndpoint(
+    repo_id="meta-llama/Meta-Llama-3-8B-Instruct",
+    huggingfacehub_api_token=os.getenv("LLAMA_TOKEN"),
+)
+llm=ChatHuggingFace(llm=Huggingface)
+
 class YouTubeSearchTool:
     def _search(self, person: str, num_results: int) -> str:
         from youtube_search import YoutubeSearch
@@ -48,16 +57,6 @@ class YouTubeSearchTool:
             num_results = 55
             person = values[0]
             return self._search(person, num_results)
-
-
-load_dotenv()
-
-Huggingface = HuggingFaceEndpoint(
-    repo_id="meta-llama/Meta-Llama-3-8B-Instruct",
-    huggingfacehub_api_token=os.getenv("LLAMA_TOKEN"),
-)
-llm=ChatHuggingFace(llm=Huggingface)
-
 
 def phi3(query, max_tokens=5000):
     client = InferenceClient(
