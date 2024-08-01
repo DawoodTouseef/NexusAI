@@ -46,17 +46,27 @@ To install and set up NexusAI, follow these steps:
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/yourusername/nexusai.git
-   cd nexusai
+   cd NexusAI
+
 2. **Install dependencies:**
 
 ```bash
 pip install -r requirements.txt
 ```
 3. **Run the application:**
-
+a. **Run the Backend**
 ```bash
+cd backend/NexusAI
+```
+```
 python main.py
 ```
+b.**Run the Frontend**
+```
+cd frontEnd/NexusFrontEnd
+npm run dev
+```
+
 4.**Usage**
 To use NexusAI, send a request in the following format:
 
