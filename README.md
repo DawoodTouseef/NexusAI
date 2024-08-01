@@ -51,7 +51,7 @@ To install and set up NexusAI, follow these steps:
 2. **Install dependencies:**
 
 ```bash
-pip install -r requirements.txt
+pip install -r backend/NexusAI/requirements.txt
 ```
 3. **Run the application:**
 a. **Run the Backend**
