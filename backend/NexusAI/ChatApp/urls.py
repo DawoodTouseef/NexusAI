@@ -16,5 +16,6 @@ urlpatterns=[
     path('serve/<str:file>/<str:file_name>/', SendImage.as_view(), name='serve-file'),
     path("signup/",SignUp.as_view(),name="sign-up"),
     path('user/<int:id>/', UserDetail.as_view(), name='user-detail'),
+    path('healthcheck/',healthcheck.as_view(),name="healthcheck")
 ]
 #handler404="ChatApp.views.error_404"

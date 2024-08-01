@@ -16,14 +16,15 @@ import json
 from typing import Optional
 from langchain_core.callbacks import CallbackManagerForToolRun
 from langchain_huggingface.chat_models.huggingface import HuggingFaceEndpoint,ChatHuggingFace
-
+from langchain.memory import ConversationBufferMemory
 
 
 load_dotenv()
 
 Huggingface = HuggingFaceEndpoint(
-    repo_id="meta-llama/Meta-Llama-3-8B-Instruct",
+    repo_id=os.getenv("MODEL"),
     huggingfacehub_api_token=os.getenv("LLAMA_TOKEN"),
+    max_new_tokens=8000
 )
 llm=ChatHuggingFace(llm=Huggingface)
 
@@ -36,7 +37,8 @@ class YouTubeSearchTool:
         url_suffix_list = [
             "https://www.youtube.com" + video["url_suffix"] for video in data["videos"]
         ]
-        return str(url_suffix_list)
+        url_suffix_str=[f"{i}:{url_suffix_list[i]}\n" for i in range(len(url_suffix_list))]
+        return f"Top {num_results} Youtube videos:{''.join(url_suffix_list)}"
 
     def run(
             self,
@@ -174,18 +176,24 @@ wikipedia_api_wrapper = WikipediaAPIWrapper(top_k_results=5, doc_content_chars_m
 wikipedia_tool = WikipediaQueryRun(api_wrapper=wikipedia_api_wrapper)
 open_weather_api_wrapper = OpenWeatherMapAPIWrapper()
 open_weather_tool = OpenWeatherMapQueryRun(api_wrapper=open_weather_api_wrapper)
-def agent(inputs):
+def agent(inputs,agent_tools:list=None):
     print(f"Agent 3:{inputs}")
+    memory=ConversationBufferMemory(memory_key="chat_history")
     tools=load_tools(["arxiv", "wolfram-alpha", "stackexchange", "pubmed"])
     for i in [open_weather_tool, youtube_tool,DuckDuckGoSearchRun(),DuckDuckGoSearchResults(),YahooFinanceNewsTool(),phi3_tool]:
         tools.append(i)
+    if agent_tools is not None:
+        for i in agent_tools:
+            tools.append(i)
     # Get the prompt to use - you can modify this!
-    prompt = hub.pull("hwchase17/react")
+    prompt = hub.pull("hwchase17/react-chat")
+    prompt.template=prompt.template.replace("OpenAI","NexusAI")
     agent = create_react_agent(llm, tools, prompt)
     # Create an agent executor by passing in the agent and tools
-    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=False, handle_parsing_errors=True,)
-                                   #max_iterations=4 * len(tools))
+    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True,
+                                   max_iterations=4 * len(tools),memory=memory)
     response = agent_executor.invoke({"input": inputs})['output']
+    print(f"Agent Response:{response}")
     return response
 
 if __name__=="__main__":

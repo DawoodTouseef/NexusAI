@@ -16,6 +16,8 @@ const Mane = ({ isAuthenticated }) => {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const [file, setFile] = useState(null);
+  const [shiftEnterCount, setShiftEnterCount] = useState(0);
+  const [textareaHeight, setTextareaHeight] = useState("auto");
 
   const handleCardClick = (promptText) => {
     setInput(promptText);
@@ -26,9 +28,24 @@ const Mane = ({ isAuthenticated }) => {
   };
 
   const handleInputKeyPress = async (e) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && e.shiftKey) {
+      e.preventDefault();
+      setShiftEnterCount((prevCount) => {
+        const newCount = prevCount + 1;
+        if (newCount <= 5) {
+          setTextareaHeight((prevHeight) =>
+              typeof prevHeight === "number" ? prevHeight + 20 : "100px"
+          );
+        }
+        return newCount;
+      });
+    } else if (e.key === "Enter") {
       await sendInput();
     }
+  };
+  const adjustTextareaHeight = (textarea) => {
+    textarea.style.height = "auto";
+    textarea.style.height = Math.min(textarea.scrollHeight, 150) + "px";
   };
 
   const handleFileChange = (e) => {
@@ -141,6 +158,10 @@ const Mane = ({ isAuthenticated }) => {
               value={input}
               type="text"
               placeholder="Enter the Prompt Here"
+              style={{
+                height: shiftEnterCount > 5 ? "150px" : textareaHeight,
+                overflowY: shiftEnterCount > 5 ? "scroll" : "hidden",
+              }}
             />
             <div>
               <img src={assets.gallery_icon} alt="Icon" onClick={handleGalleryClick} />

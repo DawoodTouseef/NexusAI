@@ -1,5 +1,6 @@
 import base64
 import copy
+import sys
 from io import BytesIO
 import io
 import random
@@ -25,14 +26,22 @@ from dotenv import load_dotenv
 from ollama_python.endpoints.generate import GenerateAPI
 from langchain_community.llms.huggingface_endpoint import HuggingFaceEndpoint
 from langchain import hub
-import os
 from huggingface_hub import InferenceClient
+from Server.Agents import agent
+from django.db.models.query import QuerySet
+import os
+from django.conf import settings
 
+
+load_dotenv()
+if settings.DEBUG:
+    API_URL=sys.argv[-1]
+else:
+    API_URL=os.getenv("API_URL")
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 path=os.path.join(BASE_DIR,"Server")
 
-load_dotenv()
 ALL_TASKS=[
 "token-classification","translation", "question-answering", "sentence-similarity", "tabular-classification", "object-detection", "image-classification", "image-to-image", "image-to-text", "text-to-image", "text-to-video", "visual-question-answering", "document-question-answering", "image-segmentation", "depth-estimation", "text-to-speech", "automatic-speech-recognition", "audio-to-audio", "audio-classification", "canny-control", "hed-control", "mlsd-control", "normal-control", "openpose-control", "canny-text-to-image", "depth-text-to-image", "hed-text-to-image", "mlsd-text-to-image", "normal-text-to-image", "openpose-text-to-image", "seg-text-to-image","text-to-code-generation"
 
@@ -85,7 +94,7 @@ if inference_mode!="huggingface":
 task_parsing_highlight_ids = get_token_ids_for_task_parsing(LLM_encoding)
 choose_model_highlight_ids = get_token_ids_for_choose_model(LLM_encoding)
 
-MODELS = [json.loads(line) for line in open(os.path.join(path,"data","p1_models.jsonl"), "r").readlines()]
+MODELS = [json.loads(line) for line in open(os.path.join(path,"data","p0_models.jsonl"), "r").readlines()]
 MODELS_MAP = {}
 for model in MODELS:
     tag = model["task"]
@@ -150,7 +159,7 @@ def convert_chat_to_completion(data):
     return data
 def chat_llama(prompt,max_tokens,stop):
     client = InferenceClient(
-        "meta-llama/Meta-Llama-3-8B-Instruct",
+        os.getenv("MODEL"),
         token=os.getenv("LLAMA_TOKEN"),
     )
     response = ""
@@ -175,7 +184,7 @@ def send_request(data):
     stop=data_dict['stop']
     max_tokens=data_dict['max_tokens']
     client = InferenceClient(
-        "meta-llama/Meta-Llama-3-8B-Instruct",
+        os.getenv("MODEL"),
         token=os.getenv("LLAMA_TOKEN"),
     )
     response = ""
@@ -416,7 +425,9 @@ def huggingface_model_inference(model_id, data, task,path=None,chat=None):
     if task == "image-to-image":
          # InferenceApi does not yet support some tasks
         image_path=os.path.join(BASE_DIR,"Server")
-        img_url = os.path.join(image_path,"public","example",data["image"])
+        #img_url = os.path.join(image_path,"public","example",data["image"])
+        img_url=UserFile.objects.filter(chat=chat).first()
+        print(img_url)
         img_data = image_to_bytes(img_url)
         # result = inference(data=img_data) # not support
         HUGGINGFACE_HEADERS["Content-Length"] = str(len(img_data))
@@ -446,14 +457,26 @@ def huggingface_model_inference(model_id, data, task,path=None,chat=None):
         name = str(uuid.uuid4())[:4]
 
         if isinstance(img, Image.Image):
+            # Ensure `path` is a dictionary
+            if path is None:
+                path = {}
+
+            print("Saving an image.")
             image_bytes = BytesIO()
             img.save(image_bytes, format='PNG')  # Save PIL Image to BytesIO
 
-            # Create AIImage instance and save to database
-            ai_image = AIImage(chat=chat)
+            # Ensure chat is a single Chat instance, not a QuerySet
+            if isinstance(chat, QuerySet):
+                chat_instance = chat.last()
+            else:
+                chat_instance = chat
+            if chat_instance is None:
+                raise ValueError("No Chat instance found matching the criteria.")
+
+            ai_image = AIImage(chat=chat_instance)
             ai_image.image.save(f"{name}.png", ContentFile(image_bytes.getvalue()), save=True)
-            result["generated_image"] = f"Path of the Image='/images/{name}.png'"
-            path['path'] = f'/images/{name}.png'
+            result["generated_image"] = f"Path of the Image='http://{API_URL}/serve/chat_images/{name}.png'"
+            path['path'] = f'{API_URL}/serve/chat_images/{name}.png'
 
 
     if task == "image-segmentation":
@@ -476,47 +499,63 @@ def huggingface_model_inference(model_id, data, task,path=None,chat=None):
             image.paste(layer, (0, 0), mask)
         name = str(uuid.uuid4())[:4]
         if isinstance(image,Image.Image):
-            image.save(f"public/images/{name}.jpg")
-            result["generated image"] = f"Path of the Image='/images/{name}.jpg'"
-            path["path"] = f"/images/{name}.jpg"
+            result["generated image"] = f"Path of the Image='{API_URL}/serve/chat_images/{name}.jpg'"
+            path["path"] = f"{API_URL}/serve/chat_images/{name}.jpg"
+            print("Saving an image.")
             image_bytes = BytesIO()
-            type = path['path'].split(".")[-1]
-            image.save(f"public/images/{name}.jpg")
-            image_bytes = image_bytes.getvalue()
-            image = AIImage(chat=chat, image=image_bytes)
-            image.save()
+            image.save(image_bytes, format='PNG')  # Save PIL Image to BytesIO
+
+            # Ensure chat is a single Chat instance, not a QuerySet
+            if isinstance(chat, QuerySet):
+                chat_instance = chat.last()
+            else:
+                chat_instance = chat
+            if chat_instance is None:
+                raise ValueError("No Chat instance found matching the criteria.")
+
+            ai_image = AIImage(chat=chat_instance)
+            ai_image.image.save(f"{name}.png", ContentFile(image_bytes.getvalue()), save=True)
         result["predicted"] = predicted
 
     if task == "object-detection":
         image_path = os.path.join(BASE_DIR, "Server")
         img_url = os.path.join(image_path, "public", "example", data["image"])
-        img_data = image_to_bytes(img_url)
-        predicted = inference(data=img_data)
-        image = Image.open(BytesIO(img_data))
-        draw = ImageDraw.Draw(image)
-        labels = list(item['label'] for item in predicted)
-        color_map = {}
-        for label in labels:
-            if label not in color_map:
-                color_map[label] = (random.randint(0, 255), random.randint(0, 100), random.randint(0, 255))
-        for label in predicted:
-            box = label["box"]
-            draw.rectangle(((box["xmin"], box["ymin"]), (box["xmax"], box["ymax"])), outline=color_map[label["label"]],
-                           width=2)
-            draw.text((box["xmin"] + 5, box["ymin"] - 15), label["label"], fill=color_map[label["label"]])
-        name = str(uuid.uuid4())[:4]
-        image.save(f"public/images/{name}.jpg")
-        result["generated image"] =f"Path of the Image='/images/{name}.jpg'"
-        result["path"] = f"/images/{name}.jpg"
-        image = Image.open(os.path.join("/home/lenovo/NexusAI/backend/NexusAI/public", path['path']))
-        image_bytes = BytesIO()
-        type = path['path'].split(".")[-1]
-        image.save(image_bytes, format=type.upper())
-        image_bytes = image_bytes.getvalue()
-        image = AIImage(chat=chat, image=image_bytes)
-        image.save()
-        result["predicted"] = predicted
+        img_url = UserFile.objects.filter(chat=chat).first()
+        print(img_url)
+        if os.path.exists(img_url):
+            img_data = image_to_bytes(img_url)
+            predicted = inference(data=img_data)
+            image = Image.open(BytesIO(img_data))
+            draw = ImageDraw.Draw(image)
+            labels = list(item['label'] for item in predicted)
+            color_map = {}
+            for label in labels:
+                if label not in color_map:
+                    color_map[label] = (random.randint(0, 255), random.randint(0, 100), random.randint(0, 255))
+            for label in predicted:
+                box = label["box"]
+                draw.rectangle(((box["xmin"], box["ymin"]), (box["xmax"], box["ymax"])), outline=color_map[label["label"]],
+                               width=2)
+                draw.text((box["xmin"] + 5, box["ymin"] - 15), label["label"], fill=color_map[label["label"]])
+            name = str(uuid.uuid4())[:4]
+            result["generated image"] =f"Path of the Image='{API_URL}/serve/chat_images/{name}.jpg'"
+            result["path"] = f"{API_URL}/serve/chat_images/{name}.jpg"
+            print("Saving an image.")
+            image_bytes = BytesIO()
+            image.save(image_bytes, format='PNG')  # Save PIL Image to BytesIO
+            # Ensure chat is a single Chat instance, not a QuerySet
+            if isinstance(chat, QuerySet):
+                chat_instance = chat.last()
+            else:
+                chat_instance = chat
+            if chat_instance is None:
+                raise ValueError("No Chat instance found matching the criteria.")
 
+            ai_image = AIImage(chat=chat_instance)
+            ai_image.image.save(f"{name}.png", ContentFile(image_bytes.getvalue()), save=True)
+            result["predicted"] = predicted
+        else:
+            result['predicted']=0
     if task in ["image-classification"]:
         image_path = os.path.join(BASE_DIR, "Server")
         img_url = os.path.join(image_path, "public", "example", data["image"])
@@ -563,7 +602,6 @@ def huggingface_model_inference(model_id, data, task,path=None,chat=None):
             audio.export(f"public/audios/{name}.{type}", format=type)
             result["generated audio"] =f"Path of the Audio='/audios/{name}.{type}'"
             path["path"] = f"/audios/{name}.{type}"
-
     return result,path
 
 def get_model_status(model_id, url, headers, queue = None):
@@ -633,12 +671,11 @@ def get_avaliable_models(candidates, topk=5):
 
     return all_available_models
 
-def run_task(input, command, results,path=None,chat=None):
+def run_task(input, command, results,path=None,chat=None,tool:list=None):
     id = command["id"]
     args = command["args"]
     task = command["task"]
     deps = command["dep"]
-
     if deps[0] != -1:
         dep_tasks = [results[dep] for dep in deps]
     else:
@@ -712,96 +749,82 @@ def run_task(input, command, results,path=None,chat=None):
 
     command["args"] = args
     logger.debug(f"parsed task: {command}")
-    if task in ALL_TASKS:
-        if task not in MODELS_MAP:
-            logger.warning(f"no available models on {task} task.")
-            record_case(success=False,
-                        **{"input": input, "task": command, "reason": f"task not support: {command['task']}",
-                           "op": "message"})
-            inference_result = {"error": f"{command['task']} not found in available tasks."}
-            print("Real-time Information")
-            from Server.Agents import agent
-            inference_result = agent(args)
-            choose = {"id": -1, "reason": "It's a realtime information"}
-            results[id] = collect_result(command, choose, inference_result)
-            return False
-
-        candidates = MODELS_MAP[task][:10]
-        all_avaliable_models = get_avaliable_models(candidates, config["num_candidate_models"])
-        all_avaliable_model_ids = all_avaliable_models["local"] + all_avaliable_models["huggingface"]
-        logger.debug(f"avaliable models on {command['task']}: {all_avaliable_models}")
-
-        if len(all_avaliable_model_ids) == 0:
-            logger.warning(f"no available models on {command['task']}")
-            record_case(success=False,
-                        **{"input": input, "task": command, "reason": f"no available models: {command['task']}",
-                           "op": "message"})
-            inference_result = {"error": f"no available models on {command['task']} task."}
-            #inference_result=model_api.generate(prompt=f"{inference_result['error']}").response
-            print("Real-time Information")
-            from Server.Agents import agent
-            inference_result = agent(args)
-            choose = {"id": -1, "reason": "It's a realtime information"}
-            results[id] = collect_result(command, choose, inference_result)
-            return False
-
-        if len(all_avaliable_model_ids) == 1:
-            best_model_id = all_avaliable_model_ids[0]
-            reason = "Only one model available."
-            choose = {"id": best_model_id, "reason": reason}
-            logger.debug(f"chosen model: {choose}")
-        else:
-            cand_models_info = [
-                {
-                    "id": model["id"],
-                    "inference endpoint": all_avaliable_models.get(
-                        "local" if model["id"] in all_avaliable_models["local"] else "huggingface"
-                    ),
-                    "likes": model.get("likes"),
-                    "description": model.get("description", "")[:config["max_description_length"]],
-                    # "language": model.get("meta").get("language") if model.get("meta") else None,
-                    "tags": model.get("meta").get("tags") if model.get("meta") else None,
-                }
-                for model in candidates
-                if model["id"] in all_avaliable_model_ids
-            ]
-
-            choose_str = choose_model(input, command, cand_models_info)
-            logger.debug(f"chosen model: {choose_str}")
-            try:
-                choose = json.loads(choose_str)
-                best_model_id = choose["id"]
-            except Exception as e:
-                choose_str = choose_model(input, command, cand_models_info)
-                choose=extract_json_from_string(choose_str)
-                best_model_id = choose[0]["id"]
-                if choose==[]:
-                    logger.warning(
-                        f"the response [ {choose_str} ] is not a valid JSON, try to find the model id and reason in the response.")
-                    choose_str = find_json(choose_str)
-                    best_model_id, reason, choose = get_id_reason(choose_str)
-        inference_result ,path= huggingface_model_inference(best_model_id, args, command['task'],path=path,chat=chat)
-        if "error" in inference_result:
-            logger.warning(f"Inference error: {inference_result['error']}")
-            record_case(success=False,
-                        **{"input": input, "task": command, "reason": f"inference error: {inference_result['error']}",
-                           "op": "message"})
-            print("Real-time Information")
-            from Server.Agents import agent
-            inference_result = agent(args)
-            choose = {"id": -1, "reason": "It's a realtime information"}
-            results[id] = collect_result(command, choose, inference_result)
-            return False
-
-        results[id] = collect_result(command, choose, inference_result)
-        return True
-    else:
+    if task not in MODELS_MAP:
+        logger.warning(f"no available models on {task} task.")
+        record_case(success=False,
+                    **{"input": input, "task": command, "reason": f"task not support: {command['task']}",
+                       "op": "message"})
+        inference_result = {"error": f"{command['task']} not found in available tasks."}
         print("Real-time Information")
         from Server.Agents import agent
-        inference_result=agent(args)
+        inference_result = agent(args,agent_tools=tool)
         choose = {"id": -1, "reason": "It's a realtime information"}
         results[id] = collect_result(command, choose, inference_result)
         return True
+
+    candidates = MODELS_MAP[task][:10]
+    all_avaliable_models = get_avaliable_models(candidates, config["num_candidate_models"])
+    all_avaliable_model_ids = all_avaliable_models["local"] + all_avaliable_models["huggingface"]
+    logger.debug(f"avaliable models on {command['task']}: {all_avaliable_models}")
+
+    if len(all_avaliable_model_ids) == 0:
+        logger.warning(f"no available models on {command['task']}")
+        record_case(success=False,
+                    **{"input": input, "task": command, "reason": f"no available models: {command['task']}",
+                       "op": "message"})
+        inference_result = {"error": f"no available models on {command['task']} task."}
+        # inference_result=model_api.generate(prompt=f"{inference_result['error']}").response
+        print("Real-time Information")
+        from Server.Agents import agent
+        inference_result = agent(args)
+        choose = {"id": -1, "reason": "It's a realtime information"}
+        results[id] = collect_result(command, choose, inference_result)
+        return True
+
+    if len(all_avaliable_model_ids) == 1:
+        best_model_id = all_avaliable_model_ids[0]
+        reason = "Only one model available."
+        choose = {"id": best_model_id, "reason": reason}
+        logger.debug(f"chosen model: {choose}")
+    else:
+        cand_models_info = [
+            {
+                "id": model["id"],
+                "inference endpoint": all_avaliable_models.get(
+                    "local" if model["id"] in all_avaliable_models["local"] else "huggingface"
+                ),
+                "likes": model.get("likes"),
+                "description": model.get("description", "")[:config["max_description_length"]],
+                # "language": model.get("meta").get("language") if model.get("meta") else None,
+                "tags": model.get("meta").get("tags") if model.get("meta") else None,
+            }
+            for model in candidates
+            if model["id"] in all_avaliable_model_ids
+        ]
+
+        choose_str = choose_model(input, command, cand_models_info)
+        logger.debug(f"chosen model: {choose_str}")
+        try:
+            choose = json.loads(choose_str)
+            best_model_id = choose["id"]
+        except Exception as e:
+            choose_str = choose_model(input, command, cand_models_info)
+            choose = extract_json_from_string(choose_str)
+            best_model_id = choose[0]["id"]
+            if choose == []:
+                logger.warning(
+                    f"the response [ {choose_str} ] is not a valid JSON, try to find the model id and reason in the response.")
+                choose_str = find_json(choose_str)
+                best_model_id, reason, choose = get_id_reason(choose_str)
+    inference_result, path = huggingface_model_inference(best_model_id, args, command['task'], path=path, chat=chat)
+    if "error" in inference_result:
+        logger.warning(f"Inference error: {inference_result['error']}")
+        record_case(success=False,
+                    **{"input": input, "task": command, "reason": f"inference error: {inference_result['error']}",
+                       "op": "message"})
+    results[id] = collect_result(command, choose, inference_result)
+    return True
+
 
 def extract_lists(input_str):
     # Regular expression to find JSON-like lists within the string
@@ -823,136 +846,63 @@ def extract_lists(input_str):
 
     return result
 
-def chat_huggingface(messages, return_planning = False, return_results = False,chat=None):
+def extract_json(input_str):
+    # Regular expression to find JSON-like lists within the string
+    # This regex looks for lists in the format: [{"key1": "value1", "key2": "value2"}, {...}]
+    list_pattern = r'\{\s*{.*?}\s*\}'
+
+    # Find all matches of the pattern
+    matches = re.findall(list_pattern, input_str, re.DOTALL)
+
+    # If matches are found, process them into lists
+    result = []
+    for match in matches:
+        # Attempt to parse the match as JSON
+        try:
+            json_obj = json.loads(match)
+            result.append(json_obj)
+        except json.JSONDecodeError:
+            continue
+
+    return result
+
+def chat_huggingface(messages, chat,return_planning=False, return_results=False,tool:list=None):
     start = time.time()
-    context = messages[:-1]
-    inputs = messages[-1]["content"]
-    logger.info("*" * 80)
-    logger.info(f"input: {inputs}")
-
-    task_str = parse_task(context, inputs)
-    try:
-        tasks=extract_lists(task_str)[0]
-    except IndexError as e:
-        tasks=[]
-    if tasks == []:  # using LLM response for empty task
-        record_case(success=False,
-                    **{"input": inputs, "task": [], "reason": "task parsing fail: empty", "op": "chitchat"})
-        paths = {}
-        from Server.Agents import agent
-        print("using an Agent.")
-        results = agent(inputs)
-        response = response_results(inputs, results).strip()
-        return {'message': response, "path": paths}
-
-    if len(tasks) == 1 and tasks[0]["task"] in ["summarization", "conversational", "text-generation",
-                                                "text2text-generation"]:
-        record_case(success=True, **{"input": inputs, "task": tasks, "reason": "chitchat tasks", "op": "chitchat"})
-        paths={}
-        from Server.Agents import agent
-        print("using an Agent.")
-        results = agent(inputs)
-        response = response_results(inputs, results).strip()
-        return {'message': response, "path": paths}
-    if len(tasks)==1:
-        record_case(success=True, **{"input": inputs, "task": tasks, "reason": "Single  tasks", "op": tasks[0]['task']})
-        d=dict()
-        path=dict()
-        done=run_task(inputs,tasks[0],d,path,chat)
-        if done:
-            results=d.copy()
-            paths=path.copy()
-            response=response_results(inputs,results).strip()
-            return {'message':response,"path":paths}
-    try:
-        tasks = unfold(tasks)
-        tasks = fix_dep(tasks)
-        logger.debug(tasks)
-
-        if return_planning:
-            return tasks
-
-        results = {}
-        threads = []
-        tasks = tasks[:]
-        d = dict()
-        retry = 0
-        while True:
-            num_thread = len(threads)
-            for task in tasks:
-                # logger.debug(f"d.keys(): {d.keys()}, dep: {dep}")
-                for dep_id in task["dep"]:
-                    if dep_id >= task["id"]:
-                        task["dep"] = [-1]
-                        break
-                dep = task["dep"]
-                if dep[0] == -1 or len(list(set(dep).intersection(d.keys()))) == len(dep):
-                    tasks.remove(task)
-                    thread = threading.Thread(target=run_task, args=(inputs, task, d,chat))
-                    thread.start()
-                    threads.append(thread)
-            if num_thread == len(threads):
-                time.sleep(0.5)
-                retry += 1
-            if retry > 160:
-                logger.debug("User has waited too long, Loop break.")
-                break
-            if len(tasks) == 0:
-                break
-            for thread in threads:
-                thread.join()
-
-            results = d.copy()
-            logger.debug(results)
-            if return_results:
-                return results
-            response = response_results(inputs, results).strip()
-
-            end = time.time()
-            during = end - start
-
-            answer = {"message": response}
-            record_case(success=True,
-                        **{"input": inputs, "task": task_str, "results": results, "response": response, "during": during,
-                           "op": "response"})
-            logger.info(f"response: {response}")
-            return answer
-    except Exception as e:
-        print("Real-time Information")
-        from Server.Agents import agent
-        start = time.time()
-        inference_result = agent(inputs)
-        response = response_results(inputs, inference_result).strip()
-        end = time.time()
-        during = end - start
-        answer = {"message": response}
-        record_case(success=True,
-                    **{"input": inputs, "task": task_str, "results": response, "response": response, "during": during,
-                       "op": "response"})
-        logger.info(f"response: {response}")
-        return answer
-def task_planning(messages):
     context = messages[:-1]
     input = messages[-1]["content"]
     logger.info("*" * 80)
     logger.info(f"input: {input}")
-
     task_str = parse_task(context, input)
     try:
         tasks = extract_lists(task_str)[0]
     except IndexError as e:
-        tasks = []
+        try:
+            tasks = extract_json(task_str)[0]
+        except IndexError as e:
+            tasks=[]
+    if tasks == []:  # using LLM response for empty task
+        record_case(success=False,
+                    **{"input": input, "task": [], "reason": "task parsing fail: empty", "op": "chitchat"})
+        response =agent(input,tool)
+        return {"message": response}
+
+    if len(tasks) == 1 and tasks[0]["task"] in ["summarization", "conversational", "text-generation",
+                                                "text2text-generation"]:
+        record_case(success=True, **{"input": input, "task": tasks, "reason": "chitchat tasks", "op": "chitchat"})
+        response = agent(input,agent_tools=tool)
+        return {"message": response}
 
     tasks = unfold(tasks)
     tasks = fix_dep(tasks)
     logger.debug(tasks)
-    return tasks
 
-def results(tasks):
-    results = {}
+    if return_planning:
+        return tasks
+
     threads = []
     tasks = tasks[:]
     d = dict()
+    file_path=dict()
     retry = 0
     while True:
         num_thread = len(threads)
@@ -965,7 +915,7 @@ def results(tasks):
             dep = task["dep"]
             if dep[0] == -1 or len(list(set(dep).intersection(d.keys()))) == len(dep):
                 tasks.remove(task)
-                thread = threading.Thread(target=run_task, args=(input, task, d))
+                thread = threading.Thread(target=run_task, args=(input, task, d,file_path, chat,tool))
                 thread.start()
                 threads.append(thread)
         if num_thread == len(threads):
@@ -976,26 +926,25 @@ def results(tasks):
             break
         if len(tasks) == 0:
             break
-        for thread in threads:
-            thread.join()
+    for thread in threads:
+        thread.join()
 
-        results = d.copy()
-        logger.debug(results)
+    result = d.copy()
+    file=file_path.copy()
+    results={'result':result,"file":file}
+    logger.debug(results)
+    if return_results:
         return results
 
+    response = response_results(input, results).strip()
 
+    end = time.time()
+    during = end - start
 
-def cli():
-    messages = []
-    print("Welcome to Jarvis! A collaborative system that consists of an LLM as the controller and numerous expert models as collaborative executors. Jarvis can plan tasks, schedule Hugging Face models, generate friendly responses based on your requests, and help you with many things. Please enter your request (`exit` to exit).")
-    while True:
-        message = input("[ User ]: ")
-        if message == "exit":
-            break
-        messages.append({"role": "user", "content": message})
-        answer = chat_huggingface(messages,  return_planning=False, return_results=False)
-        ans=answer['message']
-        print("[ Jarvis ]: ", ans)
-        messages.append({"role": "assistant", "content": answer["message"]})
-
+    answer = {"message": response}
+    record_case(success=True,
+                **{"input": input, "task": task_str, "results": results, "response": response, "during": during,
+                   "op": "response"})
+    logger.info(f"response: {response}")
+    return answer
 

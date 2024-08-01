@@ -17,12 +17,18 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 import json
 from pathlib import Path
-# set the LANGCHAIN_API_KEY environment variable (create key in settings)
+from huggingface_hub import InferenceClient
+from langchain.tools import Tool
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+class healthcheck(APIView):
+    def post(self,request,*args,**kwargs):
+        return JsonResponse({"message":True})
+    def get(self,reuest,*args,**kwargs):
+        return JsonResponse({"message": True})
 class NewThread(APIView):
     permission_classes = (IsAuthenticated,)
     def post(self,request,*args,**kwargs):
@@ -108,12 +114,13 @@ class Huggingpt(APIView):
             file = serializer.validated_data.get('file')
             title = serializer.validated_data.get('threads')
             thread=Thread.objects.get(title_id=title)
-            chat=Chat(thread=thread,message=messages[-1]["content"])
+            self.chat=Chat(thread=thread,message=messages[-1]["content"])
+            self.chat.save()
             chats = Chat.objects.filter(thread=thread)
             serialized_chats = ChatSerializer(chats, many=True)
             if file:
                 user_file=UserFile.objects.create(
-                    user=request.user,
+                    chat=self.chat,
                     file=file
                 )
                 user_file.file.save(file.name,file,save=True)
@@ -129,9 +136,16 @@ class Huggingpt(APIView):
                 response.append({"role":"assistant","content": response_data[i]['assistant']})
             for data in messages:
                 response.append(data)
-            chat.save()
             try:
-                AIresponses = chat_huggingface(response, return_planning=False, return_results=False,chat=chat)
+                from Server.Agents.InputModel import HuggingGpt_Input as T
+                AIresponses = chat_huggingface(response, return_planning=False, return_results=False,chat=self.chat,tool=[
+                    Tool(
+                        name="stabilityai/stable-diffusion-2-1",
+                        description="A Tool To convert a text to image.",
+                        func=self.text_tom_image,
+                        args_schema=T
+                    )
+                ])
                 if AIresponses['message'] is None or AIresponses['message']=="":
                     AIresponses={}
                     AIresponses['message']=chat_llama(response,max_tokens=1500,stop=[])
@@ -144,12 +158,44 @@ class Huggingpt(APIView):
                 AIresponses = {}
                 AIresponses['message'] = chat_llama(response, max_tokens=1500, stop=[])
                 AIresponses['path'] = ""
-            ai_response=AIResponse(chat=chat,message=AIresponses['message'])
+            ai_response=AIResponse(chat=self.chat,message=AIresponses['message'])
             ai_response.save()
             return JsonResponse(AIresponses)
         else:
             print("Not Done")
             return JsonResponse({"message":None,"path":None})
+    def text_tom_image(self,inputs):
+        result={}
+        paths={}
+        inference=InferenceClient(model="stabilityai/stable-diffusion-2-1",token=os.getenv("LLAMA_TOKEN"))
+        prompt = hub.pull("hardkothari/prompt-maker")
+        llm = HuggingFaceEndpoint(huggingfacehub_api_token=os.getenv("LLAMA_TOKEN"), model_kwargs={
+            "max_tokens": 4096,
+            "add_to_git_credential": True
+        },
+                                  repo_id="mistralai/Mixtral-8x7B-Instruct-v0.1")
+        runnable = prompt | llm
+        inputs = runnable.invoke(
+            {
+                "lazy_prompt": inputs,
+                "task": "text-to-image",
+
+            }
+
+        )
+        img = inference.text_to_image(inputs)  # Assuming inference() returns a PIL Image object
+        name = str(uuid.uuid4())[:4]
+        if isinstance(img, Image.Image):
+            # Ensure `path` is a dictionary
+            print("Saving an image.")
+            image_bytes = BytesIO()
+            img.save(image_bytes, format='PNG')  # Save PIL Image to BytesIO
+
+            # Ensure chat is a single Chat instance, not a QuerySet
+            ai_image = AIImage(chat=self.chat)
+            ai_image.image.save(f"{name}.png", ContentFile(image_bytes.getvalue()), save=True)
+            result["generated_image"] = f"Path of the Image='http://{API_URL}/serve/chat_images/{name}.png'"
+            paths['path'] = f'http://{API_URL}/serve/chat_images/{name}.png'
 
 class Threads(APIView):
     permission_classes = (IsAuthenticated,)

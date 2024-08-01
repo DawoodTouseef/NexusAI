@@ -5,7 +5,70 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="31e34fe3-5ff8-4376-a758-8cfa176af523" name="Changes" comment="Initial Commit">
+      <change afterPath="$PROJECT_DIR$/mem0/memory/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mem0/memory/base.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mem0/memory/main.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mem0/memory/setup.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mem0/memory/storage.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mem0/memory/telemetry.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mem0/memory/utils.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mem0/utils/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mem0/utils/factory.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mem0/vector_stores/Faiss.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mem0/vector_stores/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mem0/vector_stores/base.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mem0/vector_stores/configs.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/mem0/vector_stores/qdrant.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ChatApp/migrations/0001_initial.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ChatApp/migrations/0002_rename_image_aiimage.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ChatApp/migrations/0003_alter_aiimage_chat_userfile.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ChatApp/migrations/0004_alter_userfile_file.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ChatApp/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/ChatApp/models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ChatApp/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/ChatApp/urls.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ChatApp/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/ChatApp/views.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Server/Agents/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/Server/Agents/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Server/Model.py" beforeDir="false" afterPath="$PROJECT_DIR$/Server/Model.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Server/awesome_chat.py" beforeDir="false" afterPath="$PROJECT_DIR$/Server/awesome_chat.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Server/data/p1_models.jsonl" beforeDir="false" afterPath="$PROJECT_DIR$/Server/data/p1_models.jsonl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Server/llm/huggingface.py" beforeDir="false" afterPath="$PROJECT_DIR$/Server/llm/huggingface.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/chat_images/0352.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/chat_images/1990.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/chat_images/2cf5.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/chat_images/3d9f.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/chat_images/3e34.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/chat_images/8abe.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/chat_images/a00d.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/chat_images/a58b.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/chat_images/b623.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/chat_images/d4c3.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/chat_images/fdad.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/db.sqlite3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/debug.log" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/log_fail.jsonl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/logs/log_success.jsonl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/profile_images/Na_icon.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/profile_images/WhatsApp_Image_2023-11-26_at_7.39.43_PM.jpeg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/profile_images/WhatsApp_Image_2023-11-26_at_7.39.44_PM.jpeg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/public/audios/4046.flac" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/public/audios/5e14.flac" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/public/audios/830a.flac" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/public/examples/Na_icon.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/public/examples/Na_icon_vLU7RFs.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/public/examples/gemini_icon.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/public/examples/gemini_icon_AOaUkLW.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/public/examples/gemini_icon_CB6Sms9.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/public/examples/gemini_icon_DdEo5UL.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/public/examples/gemini_icon_WDBw6Pn.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/public/examples/gemini_icon_jZBOJa5.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/public/examples/gemini_icon_mqN2K7I.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/public/examples/gemini_icon_t6Gk16Z.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../frontEnd/NexusFrontEnd/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../frontEnd/NexusFrontEnd/src/App.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../frontEnd/NexusFrontEnd/src/auth/user.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/mem0/llms/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../frontEnd/NexusFrontEnd/src/components/Main/Main.css" beforeDir="false" afterPath="$PROJECT_DIR$/../../frontEnd/NexusFrontEnd/src/components/Main/Main.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../frontEnd/NexusFrontEnd/src/components/Main/Mane.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/../../frontEnd/NexusFrontEnd/src/components/Main/Mane.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -39,6 +102,7 @@
   &quot;associatedIndex&quot;: 7
 }</component>
   <component name="ProjectId" id="2j81YokCkq6Ba7pXqp6rLgwZNI7" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -47,26 +111,73 @@
   &quot;keyToString&quot;: {
     &quot;Docker.Dockerfile .executor&quot;: &quot;Run&quot;,
     &quot;Docker.Dockerfile.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Faiss.executor&quot;: &quot;Run&quot;,
     &quot;Python.InputModel.executor&quot;: &quot;Run&quot;,
     &quot;Python.Model.executor&quot;: &quot;Run&quot;,
     &quot;Python.__init__ (1).executor&quot;: &quot;Run&quot;,
     &quot;Python.__init__.executor&quot;: &quot;Run&quot;,
     &quot;Python.awesome_chat.executor&quot;: &quot;Run&quot;,
+    &quot;Python.faiss.executor&quot;: &quot;Run&quot;,
     &quot;Python.hfapi.executor&quot;: &quot;Run&quot;,
     &quot;Python.huggingface.executor&quot;: &quot;Run&quot;,
     &quot;Python.main.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
     &quot;last_opened_file_path&quot;: &quot;/media/lenovo/Windows 10/NexusAI/backend/NexusAI&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
+    &quot;settings.editor.selected.configurable&quot;: &quot;project.propVCSSupport.DirectoryMappings&quot;
   }
 }</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/mem0" />
       <recent name="$PROJECT_DIR$/Server/Agents" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.__init__ (1)">
+  <component name="RunManager" selected="Python.main">
+    <configuration name="Faiss" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="NexusAI" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/mem0/vector_stores" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/mem0/vector_stores/Faiss.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Model" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="NexusAI" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Server" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Server/Model.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="__init__ (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="NexusAI" />
       <option name="ENV_FILES" value="" />
@@ -133,24 +244,6 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="Dockerfile " type="docker-deploy" factoryName="dockerfile" temporary="true" server-name="Docker">
-      <deployment type="dockerfile">
-        <settings>
-          <option name="containerName" value="" />
-          <option name="sourceFilePath" value="Dockerfile" />
-        </settings>
-      </deployment>
-      <method v="2" />
-    </configuration>
-    <configuration name="Dockerfile" type="docker-deploy" factoryName="dockerfile" temporary="true" server-name="Docker">
-      <deployment type="dockerfile">
-        <settings>
-          <option name="containerName" value="" />
-          <option name="sourceFilePath" value="Dockerfile" />
-        </settings>
-      </deployment>
-      <method v="2" />
-    </configuration>
     <configuration default="true" type="docker-deploy" factoryName="dockerfile" temporary="true">
       <deployment type="dockerfile">
         <settings />
@@ -159,11 +252,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.main" />
+        <item itemvalue="Python.Model" />
+        <item itemvalue="Python.Faiss" />
         <item itemvalue="Python.__init__ (1)" />
         <item itemvalue="Python.__init__" />
-        <item itemvalue="Python.main" />
-        <item itemvalue="Docker.Dockerfile " />
-        <item itemvalue="Docker.Dockerfile" />
       </list>
     </recent_temporary>
   </component>
@@ -211,6 +304,9 @@
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
+    <ignored-roots>
+      <path value="$PROJECT_DIR$/mem0" />
+    </ignored-roots>
     <MESSAGE value="Initial Commit" />
     <option name="LAST_COMMIT_MESSAGE" value="Initial Commit" />
   </component>
