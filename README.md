@@ -78,10 +78,10 @@ To use NexusAI, send a request in the following format:
 ```
 The response will be a structured answer based on the analysis and integration of results from various AI models.
 
-***Contributing***
+# Contributing
 Contributions are welcome! Please open an issue or submit a pull request for any changes.
 
-***License***
+# License
 This project is licensed under the MIT License. See the LICENSE file for details.
 
 
